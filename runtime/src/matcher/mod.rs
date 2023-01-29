@@ -39,8 +39,8 @@ pub fn get_match_bindings<'a>(pattern: &[PatternToken], expression: &'a [Token])
 		},
 
 		PatternToken::Variable(name) => {
-			for i in 1..=expression.len() {
-				if let Some(mut bindings) = get_match_bindings(&pattern[i..], &expression[i..]) {
+			for i in 0..=expression.len() {
+				if let Some(mut bindings) = get_match_bindings(&pattern[1..], &expression[i..]) {
 
 					let binding = &expression[0..i];
 

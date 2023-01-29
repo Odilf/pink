@@ -1,0 +1,16 @@
+domain: { }
+using PredicateLogic
+reserve: { in, | }
+
+
+# In operator
+x in { x, rest... } = true
+x in { x } = true 
+
+## Fallback
+x "in" { y } = false
+
+# Set size
+|{}| = 0
+|{ x, rest... }| = 1 + |rest|
+|{ x }| = 1

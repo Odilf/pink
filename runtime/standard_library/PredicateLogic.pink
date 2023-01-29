@@ -1,0 +1,17 @@
+domain: { true, false }
+reserve: { and, not, or }
+
+# Operators
+and = { 
+	((true, true), true),
+	((true, false), true),
+	((false, true), true),
+	((false, false), false),
+}
+
+not = {
+	(false, true),
+	(true, false),
+}
+
+or(p, q) = not (not p and not q)

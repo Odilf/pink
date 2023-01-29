@@ -1,0 +1,12 @@
+structure FirstOrderLogic
+uses Sets
+
+# Predicates
+def P(x) = x in P
+
+# Quantifiers
+def "forall":
+	forall p in { a, rest... } (P(a)) = P(a) == true and (forall rest (P))
+
+# forall p in { a, b } (p == a or p == b) = true
+# forall p in { a, b } (p == a and p == b) = false
