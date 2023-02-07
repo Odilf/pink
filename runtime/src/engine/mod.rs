@@ -1,8 +1,4 @@
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    error::Error,
-    fmt::Display,
-};
+use std::{collections::BTreeSet, error::Error, fmt::Display};
 
 use crate::matching::get_match_bindings;
 

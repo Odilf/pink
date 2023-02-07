@@ -1,8 +1,4 @@
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    error::Error,
-    fmt::Display,
-};
+use std::collections::BTreeMap;
 
 use crate::engine::{PatternToken, Token};
 

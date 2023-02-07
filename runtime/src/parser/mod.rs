@@ -1,9 +1,7 @@
-use std::{collections::BTreeSet, fs, io, error::Error, fmt::Display};
+use std::{collections::BTreeSet, error::Error, fmt::Display, fs, io};
 
 use nom::{
-    bytes::complete::{is_not, tag as nom_tag, take_until as nom_take_until, take_while1, take_while},
-    combinator::opt,
-    sequence::pair,
+    bytes::complete::{tag as nom_tag, take_until as nom_take_until, take_while, take_while1},
     IResult,
 };
 // use regex::Regex;
@@ -14,7 +12,6 @@ use crate::engine::{Definition, PatternToken, Structure, Token};
 #[cfg(test)]
 mod test;
 
-
 /// Trims the start of the input
 fn trim_start(input: &str) -> &str {
     let result: IResult<_, _> = take_while(char::is_whitespace)(input);
@@ -24,28 +21,42 @@ fn trim_start(input: &str) -> &str {
     }
 }
 
-/// Nom wrapper, make it work better for current use case
+/// Nom wrapper, make it work better for current use case.
 fn tag<'a>(tag: &'a str) -> impl Fn(&'a str) -> Result<&'a str, ParseError> {
     move |input: &str| {
         let result: IResult<_, _> = nom_tag(tag)(input);
         match result {
             Ok((input, _)) => Ok(input),
-            Err(_) => Err(ParseError::ExpectedKeyword { expected: tag.to_string(), found: input.to_string() }),
+            Err(_) => Err(ParseError::ExpectedKeyword {
+                expected: tag.to_string(),
+                found: input.to_string(),
+            }),
         }
     }
 }
 
+/// Nom wrapper, make it work better for current use case.
+/// Also consumes the tag.
 fn take_until<'a>(tag: &'a str) -> impl Fn(&'a str) -> Result<(&'a str, &'a str), ParseError> {
     move |input: &str| {
         let result: IResult<_, _> = nom_take_until(tag)(input);
         match result {
-            Ok((input, inside)) => Ok((input, inside)),
-            Err(_) => Err(ParseError::ExpectedKeyword { expected: tag.to_string(), found: input.to_string() }),
+            Ok((input, inside)) => {
+                let input = &input[tag.len()..]; // Also consume tag
+                Ok((input, inside))
+            }
+            Err(_) => Err(ParseError::ExpectedKeyword {
+                expected: tag.to_string(),
+                found: input.to_string(),
+            }),
         }
     }
 }
 
-fn keyword_set<'a>(input: &'a str, keyword: &'a str) -> Result<(&'a str, BTreeSet<String>), ParseError> {
+fn keyword_set<'a>(
+    input: &'a str,
+    keyword: &'a str,
+) -> Result<(&'a str, BTreeSet<String>), ParseError> {
     let input = trim_start(input);
     let input = tag(keyword)(input)?;
 
@@ -55,9 +66,12 @@ fn keyword_set<'a>(input: &'a str, keyword: &'a str) -> Result<(&'a str, BTreeSe
     let input = trim_start(input);
     let (input, elements) = take_until("}")(input)?;
 
-    let input = tag("}")(input)?;
+    // let input = tag("}")(input)?;
 
-    return Ok((input, elements.split(",").map(|s| s.trim().to_owned()).collect()));
+    return Ok((
+        input,
+        elements.split(",").map(|s| s.trim().to_owned()).collect(),
+    ));
 }
 
 fn domain(input: &str) -> Result<(&str, BTreeSet<String>), ParseError> {
@@ -127,9 +141,9 @@ fn definition<'a>(
     // TODO: This currently would make things like `==` not work
     let (rest, lhs) = take_until("=")(input)?;
 
-    let rest = tag("=")(rest)?;
+    // let rest = tag("=")(rest)?;
     let (rest, rhs) = take_until(";")(rest)?;
-    let rest = tag(";")(rest)?;
+    // let rest = tag(";")(rest)?;
 
     let preferred = pattern(lhs, domain, reserved);
     let other = pattern(rhs, domain, reserved);
