@@ -88,37 +88,25 @@ fn pattern<'a>(
     domain: &BTreeSet<String>,
     reserved: &BTreeSet<String>,
 ) -> Vec<PatternToken> {
-    let mut result = Vec::new();
-
-    // TODO: I'm stupid this can be done in one function
-    pattern_recurse(input, domain, reserved, &mut result);
-
-    return result;
-}
-
-fn pattern_recurse<'a>(
-    input: &'a str,
-    domain: &BTreeSet<String>,
-    reserved: &BTreeSet<String>,
-    accomulator: &mut Vec<PatternToken>,
-) {
     if input.len() == 0 {
-        return;
+        return Vec::new();
     }
 
     let input = input.trim();
-
+    
     for literal in reserved {
         if let Ok(rest) = tag(literal.as_str())(input) {
-            accomulator.push(PatternToken::Concrete(Token::Literal(literal.to_string())));
-            return pattern_recurse(rest, domain, reserved, accomulator);
+            let mut pattern = pattern(rest, domain, reserved);
+            pattern.insert(0, PatternToken::Concrete(Token::Literal(literal.to_string())));
+            return pattern;
         }
     }
 
     for element in domain {
         if let Ok(rest) = tag(element.as_str())(input) {
-            accomulator.push(PatternToken::Concrete(Token::Element(element.to_string())));
-            return pattern_recurse(rest, domain, reserved, accomulator);
+            let mut pattern = pattern(rest, domain, reserved);
+            pattern.insert(0, PatternToken::Concrete(Token::Element(element.to_string())));
+            return pattern;
         }
     }
 
@@ -129,8 +117,9 @@ fn pattern_recurse<'a>(
         Err(_) => (&input[1..], &input[0..1]),
     };
 
-    accomulator.push(PatternToken::Variable(variable.to_string()));
-    return pattern_recurse(rest, domain, reserved, accomulator);
+    let mut pattern = pattern(rest, domain, reserved);
+    pattern.insert(0, PatternToken::Variable(variable.to_string()));
+    return pattern;
 }
 
 fn definition<'a>(
