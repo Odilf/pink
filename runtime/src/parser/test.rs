@@ -125,7 +125,7 @@ fn whole_parse_test() {
         .unwrap()
         .1;
 
-    let expected = Structure::new(domain, reserved, vec![def]).unwrap();
+    let expected = Structure::create(domain, reserved, vec![def]).unwrap();
 
     assert_eq!(expected, parse(input.to_owned()).unwrap());
 }
@@ -154,7 +154,7 @@ fn parse_with_comments() {
         .unwrap()
         .1;
 
-    let expected = Structure::new(domain, reserved, vec![def]).unwrap();
+    let expected = Structure::create(domain, reserved, vec![def]).unwrap();
 
     assert_eq!(expected, parse(input.to_owned()).unwrap());
 }
@@ -162,9 +162,4 @@ fn parse_with_comments() {
 #[test]
 fn parse_core() {
     dbg!(parse_file("standard_library/Core.pink").unwrap());
-}
-
-#[test]
-fn parse_cdwdwe() {
-    dbg!(parse_file("standard_library/PredicateLogic.pink").unwrap());
 }

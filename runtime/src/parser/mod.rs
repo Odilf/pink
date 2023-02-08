@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod test;
+
 use std::{collections::BTreeSet, error::Error, fmt::Display, fs, io};
 
 use nom::{
@@ -7,10 +10,7 @@ use nom::{
 // use regex::Regex;
 use regex_macro::regex;
 
-use crate::engine::{Definition, PatternToken, Structure, Token, StructureCreationError};
-
-#[cfg(test)]
-mod test;
+use crate::engine::{Definition, PatternToken, Structure, Token, StructureError, eval::INTRINSIC};
 
 /// Trims the start of the input
 fn trim_start(input: &str) -> &str {
@@ -82,6 +82,20 @@ fn reserve(input: &str) -> Result<(&str, BTreeSet<String>), ParseError> {
     keyword_set(input, "reserve")
 }
 
+fn uses(input: &str) -> Result<(&str, Option<&str>), ParseError> {
+    let input = trim_start(input);
+    match tag("uses")(input) {
+        Ok(input) => {
+            let input = trim_start(input);
+            let (input, path) = take_until(";")(input)?;
+            
+            Ok((input, Some(path)))
+        }
+        
+        Err(_) => Ok((input, None))
+    }
+}
+
 /// Parses the *whole* input string as an expression
 fn pattern<'a>(
     input: &'a str,
@@ -122,6 +136,37 @@ fn pattern<'a>(
     return pattern;
 }
 
+/// Parses the *whole* input string as an expression
+pub fn expression<'a>(
+    input: &'a str,
+    domain: &BTreeSet<String>,
+    reserved: &BTreeSet<String>,
+) -> Result<Vec<Token>, ParseError> {
+    if input.len() == 0 {
+        return Ok(Vec::new());
+    }
+
+    let input = input.trim();
+    
+    for literal in reserved {
+        if let Ok(rest) = tag(literal.as_str())(input) {
+            let mut expression = expression(rest, domain, reserved)?;
+            expression.insert(0, Token::Literal(literal.to_string()));
+            return Ok(expression);
+        }
+    }
+
+    for element in domain {
+        if let Ok(rest) = tag(element.as_str())(input) {
+            let mut expression = expression(rest, domain, reserved)?;
+            expression.insert(0, Token::Element(element.to_string()));
+            return Ok(expression);
+        }
+    }
+
+    return Err(ParseError::UknownToken(input.to_string()));
+}
+
 fn definition<'a>(
     input: &'a str,
     domain: &BTreeSet<String>,
@@ -129,13 +174,10 @@ fn definition<'a>(
 ) -> Result<(&'a str, Definition), ParseError> {
     // TODO: This currently would make things like `==` not work
     let (rest, lhs) = take_until("=")(input)?;
-
-    // let rest = tag("=")(rest)?;
     let (rest, rhs) = take_until(";")(rest)?;
-    // let rest = tag(";")(rest)?;
 
-    let preferred = pattern(lhs, domain, reserved);
-    let other = pattern(rhs, domain, reserved);
+    let other = pattern(lhs, domain, reserved);
+    let preferred = pattern(rhs, domain, reserved);
 
     let definition = Definition::new(preferred, other);
 
@@ -152,8 +194,13 @@ pub fn parse(input: String) -> Result<Structure, ParseError> {
     let input = strip_comments(input);
     let input = input.as_str();
 
-    let (input, domain) = domain(input).unwrap();
-    let (input, reserved) = reserve(input).unwrap();
+    let (input, mut domain) = domain(input)?;
+    let (input, mut reserved) = reserve(input)?;
+
+    // TODO: Implement actual dependencies and a dependency graph with `INTRINSIC` as the root. 
+    // This is very bad. 
+    domain.append(&mut INTRINSIC.domain.clone());
+    reserved.append(&mut INTRINSIC.reserved.clone());
 
     let mut definitions = Vec::new();
     let mut input = input;
@@ -163,9 +210,9 @@ pub fn parse(input: String) -> Result<Structure, ParseError> {
     }
 
 
-    let structure = match Structure::new(domain, reserved, definitions)  {
+    let structure = match Structure::create(domain, reserved, definitions)  {
         Ok(structure) => structure,
-        Err(StructureCreationError::DomainAndReservedOverlap { culprit }) => {
+        Err(StructureError::DomainAndReservedOverlap { culprit }) => {
             return Err(ParseError::DomainAndReservedOverlap { culprit })
         }
     };
@@ -186,6 +233,7 @@ pub fn parse_file(path: &str) -> Result<Structure, ParseError> {
 pub enum ParseError {
     Expected { expected: String, found: String },
     DomainAndReservedOverlap { culprit: String },
+    UknownToken(String),
 
     // For file handling shenaningans
     Io(io::Error),
@@ -200,6 +248,7 @@ impl Display for ParseError {
             ParseError::DomainAndReservedOverlap { culprit } => {
                 format!("Domain and reserved overlap: {}", culprit)
             }
+            ParseError::UknownToken(token) => format!("Unknown token: {}", token),
             ParseError::Io(e) => format!("IO error: {}", e),
         };
 

@@ -1,9 +1,9 @@
+#[cfg(test)]
+mod test;
+
 use std::collections::BTreeMap;
 
 use crate::engine::{PatternToken, Token};
-
-#[cfg(test)]
-mod test;
 
 pub fn get_match_bindings<'a, 'b>(
     pattern: &'a [PatternToken],

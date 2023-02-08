@@ -1,3 +1,8 @@
+pub mod eval;
+
+#[cfg(test)]
+mod test;
+
 use std::{collections::BTreeSet, error::Error, fmt::Display};
 
 use crate::matching::get_match_bindings;
@@ -12,15 +17,13 @@ pub enum Token {
     Literal(String),
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum PatternToken {
     Concrete(Token),
     Variable(String),
 }
 
-pub type Expression = Vec<Token>;
-
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Definition {
     preferred: Vec<PatternToken>,
     other: Vec<PatternToken>,
@@ -53,14 +56,22 @@ impl Definition {
         Some(result)
     }
 
-    pub fn get_transformations(&self, expression: &[Token]) -> Vec<Expression> {
+    pub fn into_preferred(&self, expression: &[Token]) -> Option<Vec<Token>> {
+        Self::transform(&self.other, &self.preferred, expression)
+    }
+
+    pub fn out_of_preferred(&self, expression: &[Token]) -> Option<Vec<Token>> {
+        Self::transform(&self.preferred, &self.other, expression)
+    }
+
+    pub fn get_transformations(&self, expression: &[Token]) -> Vec<Vec<Token>> {
         let mut output = Vec::with_capacity(2);
 
-        if let Some(result) = Self::transform(&self.preferred, &self.other, expression) {
+        if let Some(result) = self.into_preferred(expression) {
             output.push(result);
         }
 
-        if let Some(result) = Self::transform(&self.other, &self.preferred, expression) {
+        if let Some(result) = self.out_of_preferred(expression) {
             output.push(result);
         }
 
@@ -68,7 +79,7 @@ impl Definition {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Structure {
     pub domain: BTreeSet<String>,
     pub reserved: BTreeSet<String>,
@@ -76,13 +87,16 @@ pub struct Structure {
 }
 
 impl Structure {
-    pub fn new(
+    /// Create a new structure.
+    /// 
+    /// It is not called `new` because it can fail and using `new` with `Result` is confusing.
+    pub fn create(
         domain: BTreeSet<String>,
         reserved: BTreeSet<String>,
         definitions: Vec<Definition>,
-    ) -> Result<Self, StructureCreationError> {
+    ) -> Result<Self, StructureError> {
         if let Some(culprit) = domain.iter().find(|d| reserved.contains(*d)) {
-            return Err(StructureCreationError::DomainAndReservedOverlap { culprit: culprit.to_owned() });
+            return Err(StructureError::DomainAndReservedOverlap { culprit: culprit.to_owned() });
         }
 
         Ok(Self {
@@ -92,30 +106,48 @@ impl Structure {
         })
     }
 
-    pub fn get_transformations(&self, expression: &[Token]) -> Vec<Expression> {
-        let mut output = Vec::new();
+    pub fn include(mut self, other: Structure) -> Result<Self, StructureError> {
+        self.domain.extend(other.domain);
+        self.reserved.extend(other.reserved);
 
-        for definition in &self.definitions {
-            output.extend(definition.get_transformations(expression));
+        if let Some(culprit) = self.domain.iter().find(|d| self.reserved.contains(*d)) {
+            // TODO: Return proper errors for this. Maybe make structures have names?
+            return Err(StructureError::DomainAndReservedOverlap { culprit: culprit.to_owned() });
         }
 
-        output
+        self.definitions.extend(other.definitions);
+
+        return Ok(self);
     }
 }
 
+
+impl Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Token::Element(element) => write!(f, "{}", element)?,
+            Token::Literal(literal) => write!(f, "\"{}\"", literal)?,
+        }
+
+        Ok(())
+    }
+}
+
+
+// I don't know to what extent this error is necessary. Maybe replace it with `Option`?
 #[derive(Debug, PartialEq, Eq)]
-pub enum StructureCreationError {
+pub enum StructureError {
     DomainAndReservedOverlap { culprit: String },
 }
 
-impl Display for StructureCreationError {
+impl Display for StructureError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            StructureCreationError::DomainAndReservedOverlap { culprit } => {
+            StructureError::DomainAndReservedOverlap { culprit } => {
                 write!(f, "Domain and reserved keywords overlap (\"{}\" appears in both)", culprit)
             }
         }
     }
 }
 
-impl Error for StructureCreationError {}
+impl Error for StructureError {}
