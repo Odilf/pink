@@ -1,5 +1,5 @@
 domain { true, false }
-reserve { in } # Do I reserve curly braces and parenthesis in the language itself? I certainly have to reserve commas
+reserve { in } # Commas, curly braces and parenthesis are reserved by the runtime itself
 
 # Parenthesis unwrapping
 (x) = x;

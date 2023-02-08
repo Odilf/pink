@@ -81,8 +81,8 @@ impl Structure {
         reserved: BTreeSet<String>,
         definitions: Vec<Definition>,
     ) -> Result<Self, StructureCreationError> {
-        if domain.iter().any(|d| reserved.contains(d)) {
-            return Err(StructureCreationError::DomainAndReservedOverlap);
+        if let Some(culprit) = domain.iter().find(|d| reserved.contains(*d)) {
+            return Err(StructureCreationError::DomainAndReservedOverlap { culprit: culprit.to_owned() });
         }
 
         Ok(Self {
@@ -105,14 +105,14 @@ impl Structure {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum StructureCreationError {
-    DomainAndReservedOverlap,
+    DomainAndReservedOverlap { culprit: String },
 }
 
 impl Display for StructureCreationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            StructureCreationError::DomainAndReservedOverlap => {
-                write!(f, "Domain and reserved keywords overlap")
+            StructureCreationError::DomainAndReservedOverlap { culprit } => {
+                write!(f, "Domain and reserved keywords overlap (\"{}\" appears in both)", culprit)
             }
         }
     }

@@ -7,7 +7,7 @@ use nom::{
 // use regex::Regex;
 use regex_macro::regex;
 
-use crate::engine::{Definition, PatternToken, Structure, Token};
+use crate::engine::{Definition, PatternToken, Structure, Token, StructureCreationError};
 
 #[cfg(test)]
 mod test;
@@ -27,9 +27,9 @@ fn tag<'a>(tag: &'a str) -> impl Fn(&'a str) -> Result<&'a str, ParseError> {
         let result: IResult<_, _> = nom_tag(tag)(input);
         match result {
             Ok((input, _)) => Ok(input),
-            Err(_) => Err(ParseError::ExpectedKeyword {
+            Err(_) => Err(ParseError::Expected {
                 expected: tag.to_string(),
-                found: input.to_string(),
+                found: input[..tag.len().min(input.len())].to_string(),
             }),
         }
     }
@@ -45,7 +45,7 @@ fn take_until<'a>(tag: &'a str) -> impl Fn(&'a str) -> Result<(&'a str, &'a str)
                 let input = &input[tag.len()..]; // Also consume tag
                 Ok((input, inside))
             }
-            Err(_) => Err(ParseError::ExpectedKeyword {
+            Err(_) => Err(ParseError::Expected {
                 expected: tag.to_string(),
                 found: input.to_string(),
             }),
@@ -148,7 +148,7 @@ fn strip_comments(input: String) -> String {
     input.replace(regex!("#.*"), "")
 }
 
-pub fn parse(input: String) -> Result<Structure, nom::Err<nom::error::Error<String>>> {
+pub fn parse(input: String) -> Result<Structure, ParseError> {
     let input = strip_comments(input);
     let input = input.as_str();
 
@@ -162,23 +162,30 @@ pub fn parse(input: String) -> Result<Structure, nom::Err<nom::error::Error<Stri
         definitions.push(definition);
     }
 
-    let Ok(structure) = Structure::new(domain, reserved, definitions) else {
-        // wut
-        // TODO: Probaly wrong
-        return Err(nom::Err::Error(nom::error::Error::new(input.to_string(), nom::error::ErrorKind::Tag)))
+
+    let structure = match Structure::new(domain, reserved, definitions)  {
+        Ok(structure) => structure,
+        Err(StructureCreationError::DomainAndReservedOverlap { culprit }) => {
+            return Err(ParseError::DomainAndReservedOverlap { culprit })
+        }
     };
 
     return Ok(structure);
 }
 
-pub fn parse_file(path: &str) -> io::Result<Structure> {
-    let input = fs::read_to_string(path)?;
-    return Ok(parse(input).expect("pls fix lol"));
+pub fn parse_file(path: &str) -> Result<Structure, ParseError> {
+    let input = match fs::read_to_string(path) {
+        Ok(input) => input,
+        Err(e) => return Err(ParseError::Io(e)),
+    };
+
+    return Ok(parse(input)?);
 }
 
 #[derive(Debug)]
-enum ParseError {
-    ExpectedKeyword { expected: String, found: String },
+pub enum ParseError {
+    Expected { expected: String, found: String },
+    DomainAndReservedOverlap { culprit: String },
 
     // For file handling shenaningans
     Io(io::Error),
@@ -186,7 +193,17 @@ enum ParseError {
 
 impl Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        let message = match self {
+            ParseError::Expected { expected, found } => {
+                format!("Expected {}, found {}", expected, found)
+            }
+            ParseError::DomainAndReservedOverlap { culprit } => {
+                format!("Domain and reserved overlap: {}", culprit)
+            }
+            ParseError::Io(e) => format!("IO error: {}", e),
+        };
+
+        write!(f, "{}", message)
     }
 }
 
