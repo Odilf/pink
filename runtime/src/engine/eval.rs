@@ -3,47 +3,47 @@ use once_cell::sync::Lazy;
 
 use crate::parser::{ParseError, self};
 
-use super::{Structure, Token};
+use super::{Structure, Token, Expression};
 
 /// The "instrinsic" structure is part of the language itself.
 /// 
-/// It reserves curly braces, brackets, parentheses, and commas.
+/// It reserves curly braces, parentheses, and commas.
 pub static INTRINSIC: Lazy<Structure> = Lazy::new(|| {
 	let reserved = BTreeSet::from([
-		"{", "}", "[", "]", ",", "(", ")",
+		"{", "}", ",", "(", ")",
 	].map(|s| s.to_owned()));
 
 	Structure::create(BTreeSet::new(), reserved, Vec::new()).unwrap()
 });
 
+pub enum LowerResult {
+	Lowered(Expression),
+	Unchanged(Expression),
+}
+
 impl Structure {
-	pub fn eval(&self, expression: &[Token]) -> Vec<Token> {
-		// TODO: lol
-		let mut output = expression.to_vec();
-		let mut i = 0;
-
-		loop {
-			i += 1;
-			let mut changed = false;
-			
+	pub fn lower(&self, expression: Expression) -> LowerResult {
+		for start_index in 0..expression.tokens.len() {
 			for definition in &self.definitions {
-				if let Some(transformation) = definition.into_preferred(&output) {
-					output = transformation;
-					changed = true;
+				if let Some(transformation) = definition.into_preferred(&expression.tokens[start_index..]) {
+					return LowerResult::Lowered(transformation);
 				}
-			}
-
-			if !changed || i > 100 {
-				break;
 			}
 		}
 
-		output
+		LowerResult::Unchanged(expression)
 	}
 
-	pub fn eval_str(&self, input: &str) -> Result<Vec<Token>, ParseError> {
+	pub fn eval(&self, expression: Expression) -> Expression {
+		match self.lower(expression) {
+			LowerResult::Lowered(lowered) => self.eval(lowered),
+			LowerResult::Unchanged(expression) => expression,
+		}
+	}
+
+	pub fn eval_str(&self, input: &str) -> Result<Expression, ParseError> {
 		let expression = parser::expression(input, &self.domain, &self.reserved)?;
 
-		return Ok(self.eval(expression.as_slice()));
+		return Ok(self.eval(expression));
 	}
 }

@@ -5,6 +5,7 @@ use std::collections::BTreeMap;
 
 use crate::engine::{PatternToken, Token};
 
+/// Gets match bindings. Returns `(single_bindings, spread_bindings)`.
 pub fn get_match_bindings<'a, 'b>(
     pattern: &'a [PatternToken],
     expression: &'b [Token],
@@ -26,6 +27,7 @@ pub fn get_match_bindings<'a, 'b>(
 
         PatternToken::Variable(name) => {
             for i in 0..=expression.len() {
+                // TODO: Rewrite to `let ... else`
                 if let Some(mut bindings) = get_match_bindings(&pattern[1..], &expression[i..]) {
                     let binding = &expression[0..i];
 

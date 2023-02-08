@@ -38,9 +38,11 @@ pub enum PatternToken {
 
     /// Variable that binds to only one token
     Variable(String),
+
+    /// Variable that binds arbitrary number of tokens
+    SpreadVariable(String),
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Expression {
     pub tokens: Vec<Token>,
 }
@@ -85,7 +87,7 @@ impl Definition {
         to: &[PatternToken],
         expression: &'a [Token],
     ) -> Option<Expression> {
-        let mut bindings = get_match_bindings(from, expression)?;
+        let (mut single_bindings, mut spread_bindings) = get_match_bindings(from, expression)?;
 
         let mut result = Vec::new();
 
@@ -93,9 +95,13 @@ impl Definition {
             match token {
                 PatternToken::Concrete(token) => result.push(token.clone()),
                 PatternToken::Variable(name) => {
-                    let binding = bindings.remove(name)?;
-                    result.extend_from_slice(binding);
+                    let binding = single_bindings.remove(name)?;
+                    result.push(binding.clone());
                 },
+                PatternToken::SpreadVariable(name) => {
+                    let binding = spread_bindings.remove(name)?;
+                    result.extend_from_slice(binding);
+                }
             };
         }
 
@@ -109,6 +115,20 @@ impl Definition {
     pub fn out_of_preferred(&self, expression: &[Token]) -> Option<Expression> {
         Self::transform(&self.preferred, &self.other, expression)
     }
+
+    // pub fn get_transformations(&self, expression: &[Token]) -> Vec<Expression> {
+    //     let mut output = Vec::with_capacity(2);
+
+    //     if let Some(result) = self.into_preferred(expression) {
+    //         output.push(result);
+    //     }
+
+    //     if let Some(result) = self.out_of_preferred(expression) {
+    //         output.push(result);
+    //     }
+
+    //     output
+    // }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]

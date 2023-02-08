@@ -1,5 +1,4 @@
-use std::io::{stdin, stdout, Write, self};
-use pink::{engine::{Structure, eval}, parser::expression};
+use pink::engine::Structure;
 
 use rustyline::error::ReadlineError;
 use rustyline::{Editor, Result};
@@ -25,9 +24,7 @@ pub fn run(structure: Structure) -> Result<()> {
 					}
 				};
 
-				for token in evaluated {
-					print!("{} ", token);
-				}
+				print!("{evaluated}");
 
 				// Flush
 				println!("");
@@ -48,70 +45,7 @@ pub fn run(structure: Structure) -> Result<()> {
                 break
             }
         }
-    }
-    rl.save_history("history.txt")
+    };
 
+	Ok(())
 }
-
-// pub fn run(structure: Structure) {
-// 	let stdin = stdin();
-// 	let mut stdout = stdout().into_raw_mode().unwrap();
-	
-//     write!(stdout, "Welcome to pink. \n\rPress `ctrl+D` to exit. \n\r").unwrap();
-//     write!(stdout, "> ").unwrap();
-// 	stdout.flush().unwrap();
-
-// 	let mut buffer = String::new();
-//     for key in stdin.keys() {
-// 		match key.unwrap() {
-// 			Key::Ctrl('d') => break,
-
-// 			Key::Char('\n') => {
-// 				print!("\n\r");
-// 				for token in structure.eval_str(buffer.as_str()).unwrap() {
-// 					print!("{} ", token);
-// 				}
-				
-// 				// Start new buffer
-// 				print!("\n\r> ");
-// 				buffer = String::new();
-// 			}
-
-// 			Key::Backspace => {
-// 				buffer.pop();
-// 				print!("{}", termion::clear::CurrentLine);
-// 				print!("\r> ");
-// 				for c in buffer.chars() {
-// 					print!("{}", c);
-// 				}
-// 			}
-
-// 			Key::Char(c) => {
-// 				buffer.push(c);
-// 				print!("{}", c);
-// 			}
-
-// 			_ => {}
-// 		}
-// 		stdout.flush().unwrap();
-// 	}
-
-// 		// match line {
-// 		// 	Ok(line) => {
-// 		// 		println!("You typed: {}", line);
-// 		// 	},
-// 		// 	Err(_) => {
-// 		// 		println!("Error reading line");
-// 		// 	}
-// 		// }
-//         // match c.unwrap() {
-//         //     Key::Ctrl('d') => break,
-//         //     Key::Char('q') => break,
-//         //     Key::Char(c) => print!("{}", c),
-//         //     _ => {}
-//         // }
-//         stdout.flush().unwrap();
-//     // }
-
-//     // write!(stdout, "{}", termion::cursor::Show).unwrap();
-// }
