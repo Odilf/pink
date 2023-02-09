@@ -1,12 +1,15 @@
-domain { true, false }
-reserve { in } # Commas, curly braces and parenthesis are reserved by the runtime itself
+domain { t, f }
+reserve { and, or, not }
 
-# Parenthesis unwrapping
-(x) = x;
+t and t = t;
+t and f = f;
+f and t = f;
+f and f = f;
 
-# In operator
-# x in { x, rest... } = true;
-x... in { x... } = true;
+t or t = t;
+t or f = t;
+f or t = t;
+f or f = f;
 
-## Fallback
-x in { y } = false;
+not t = f;
+not f = t;

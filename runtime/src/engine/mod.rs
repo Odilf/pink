@@ -21,10 +21,10 @@ impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use termion::color;
         match self {
-            Token::Element(element) => write!(f, "{element}")?,
+            Token::Element(element) => write!(f, "{}{element}{}", color::Fg(color::LightMagenta), termion::style::Reset)?,
 
             // TODO: I'm afraid something could be wrong here in different terminals
-            Token::Literal(literal) => write!(f, "{}{literal}{}", color::Fg(color::LightCyan), color::Fg(color::LightWhite))?,
+            Token::Literal(literal) => write!(f, "{literal}")?,
         }
 
         Ok(())
@@ -38,6 +38,15 @@ pub enum PatternToken {
 
     /// Variable that binds to only one token
     Variable(String),
+}
+
+impl Display for PatternToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Concrete(token) => write!(f, "{token}"),
+            Self::Variable(name) => write!(f, "{}{name}{}", termion::style::Bold, termion::style::Reset),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -68,15 +77,18 @@ impl Display for Expression {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+/// A definition has a "high" and a "low" side. Pink tries to lower the definitions.
+/// 
+/// It is defined as `high = low`, so expressions will generally be moved to the right. 
 pub struct Definition {
-    preferred: Vec<PatternToken>,
-    other: Vec<PatternToken>,
+    low: Vec<PatternToken>,
+    high: Vec<PatternToken>,
 }
 
 impl Definition {
     /// Definitions are defined as `other = preferred` (so `rhs` is `preferred` and `lhs` is `other`)
     pub fn new(lhs: Vec<PatternToken>, rhs: Vec<PatternToken>) -> Self {
-        Self { preferred: rhs, other: lhs }
+        Self { high: lhs, low: rhs, }
     }
 
     /// Transform an expression from one pattern to another.
@@ -102,12 +114,28 @@ impl Definition {
         Some(Expression::new(result))
     }
 
-    pub fn into_preferred(&self, expression: &[Token]) -> Option<Expression> {
-        Self::transform(&self.other, &self.preferred, expression)
+    pub fn lower(&self, expression: &[Token]) -> Option<Expression> {
+        Self::transform(&self.high, &self.low, expression)
     }
 
-    pub fn out_of_preferred(&self, expression: &[Token]) -> Option<Expression> {
-        Self::transform(&self.preferred, &self.other, expression)
+    pub fn raise(&self, expression: &[Token]) -> Option<Expression> {
+        Self::transform(&self.low, &self.high, expression)
+    }
+}
+
+impl Display for Definition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for token in &self.high {
+            write!(f, "{} ", token)?;
+        }
+
+        write!(f, "= ")?;
+
+        for token in &self.low {
+            write!(f, "{} ", token)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -150,6 +178,26 @@ impl Structure {
         self.definitions.extend(other.definitions);
 
         return Ok(self);
+    }
+}
+
+impl Display for Structure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        
+        let domain: Vec<_> = self.domain.iter().map(|v| v.clone()).collect();
+        writeln!(f, "Domain: {{ {} }}", domain.join(", "))?;
+
+        let reserved: Vec<_> = self.reserved.iter().map(|v| v.clone()).collect();
+        writeln!(f, "Reserved: {{ {} }}", reserved.join(", "))?;
+
+
+        writeln!(f, "Definitions: ")?;
+
+        for definition in &self.definitions {
+            writeln!(f, "- {definition};")?;
+        }
+
+        Ok(())
     }
 }
 

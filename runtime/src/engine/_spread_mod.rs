@@ -115,20 +115,6 @@ impl Definition {
     pub fn out_of_preferred(&self, expression: &[Token]) -> Option<Expression> {
         Self::transform(&self.preferred, &self.other, expression)
     }
-
-    // pub fn get_transformations(&self, expression: &[Token]) -> Vec<Expression> {
-    //     let mut output = Vec::with_capacity(2);
-
-    //     if let Some(result) = self.into_preferred(expression) {
-    //         output.push(result);
-    //     }
-
-    //     if let Some(result) = self.out_of_preferred(expression) {
-    //         output.push(result);
-    //     }
-
-    //     output
-    // }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]

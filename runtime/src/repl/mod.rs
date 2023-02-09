@@ -1,17 +1,24 @@
+use once_cell::sync::Lazy;
 use pink::engine::Structure;
 
 use rustyline::error::ReadlineError;
 use rustyline::{Editor, Result};
 
+use termion::{color::{Fg, Magenta}, style::{Bold, Reset}};
+
+// TODO: Would be nice if this was `const`
+static PROMPT: Lazy<String> = Lazy::new(|| format!("{}{}>>{} ", Fg(Magenta), Bold, Reset));
 
 pub fn run(structure: Structure) -> Result<()> {
-	// `()` can be used when no completer is required
+    println!("{structure}");
+
     let mut rl = Editor::<()>::new()?;
-    // if rl.load_history("history.txt").is_err() {
-    //     println!("No previous history.");
-    // }
+    if rl.load_history(".history.txt").is_err() {
+        println!("No previous history.");
+    }
+
     loop {
-        let readline = rl.readline(">> ");
+        let readline = rl.readline(&PROMPT);
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_str());
@@ -24,18 +31,13 @@ pub fn run(structure: Structure) -> Result<()> {
 					}
 				};
 
-				print!("{evaluated}");
+				print!("Result: {evaluated}");
 
 				// Flush
-				println!("");
+				println!();
             }
 
-            Err(ReadlineError::Interrupted) => {
-                println!("CTRL-C");
-                break
-            }
-
-            Err(ReadlineError::Eof) => {
+            Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
                 println!("Ending session");
                 break
             }
@@ -47,5 +49,5 @@ pub fn run(structure: Structure) -> Result<()> {
         }
     };
 
-	Ok(())
+    rl.save_history(".history.txt")
 }

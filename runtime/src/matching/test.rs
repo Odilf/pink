@@ -149,6 +149,49 @@ fn match_capture() {
 }
 
 #[test]
+fn match_capture_two_variables() {
+    let pattern = vec![
+        PatternToken::Concrete(Token::Literal("token_1".to_owned())),
+        PatternToken::Variable("p".to_owned()),
+        PatternToken::Concrete(Token::Literal("token_2".to_owned())),
+        PatternToken::Variable("p".to_owned()),
+        PatternToken::Variable("q".to_owned()),
+    ];
+
+    let expression = vec![
+        Token::Literal("token_1".to_owned()),
+        Token::Literal("variable".to_owned()),
+        Token::Literal("variable".to_owned()),
+        Token::Literal("token_2".to_owned()),
+        Token::Literal("variable".to_owned()),
+        Token::Literal("variable".to_owned()),
+        Token::Literal("other_variable".to_owned()),
+        Token::Literal("other_variable".to_owned()),
+    ];
+
+    let bindings = get_match_bindings(&pattern, &expression);
+
+    let p_binding = vec![
+        Token::Literal("variable".to_owned()),
+        Token::Literal("variable".to_owned()),
+    ];
+    let p = "p".to_owned();
+
+    let q_binding = vec![
+        Token::Literal("other_variable".to_owned()),
+        Token::Literal("other_variable".to_owned()),
+    ];
+    let q = "q".to_owned();
+
+    let expected = BTreeMap::from([
+        (&p, p_binding.as_slice()),
+        (&q, q_binding.as_slice()),
+    ]);
+
+    assert_eq!(bindings, Some(expected));
+}
+
+#[test]
 fn match_capture_fail() {
     let pattern = vec![
         PatternToken::Concrete(Token::Literal("token_1".to_owned())),
@@ -162,6 +205,24 @@ fn match_capture_fail() {
         Token::Literal("variable".to_owned()),
         Token::Literal("token_2".to_owned()),
         Token::Literal("not_the_same_variable".to_owned()),
+    ];
+
+    let bindings = get_match_bindings(&pattern, &expression);
+
+    assert!(bindings.is_none());
+}
+
+#[test]
+fn reject_leftovers() {
+    let pattern = vec![
+        PatternToken::Concrete(Token::Literal("token_1".to_owned())),
+        PatternToken::Concrete(Token::Literal("token_2".to_owned())),
+    ];
+
+    let expression = vec![
+        Token::Literal("token_1".to_owned()),
+        Token::Literal("token_2".to_owned()),
+        Token::Literal("token_3".to_owned()),
     ];
 
     let bindings = get_match_bindings(&pattern, &expression);

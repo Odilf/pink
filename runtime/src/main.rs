@@ -1,5 +1,5 @@
 use clap::Parser;
-use pink::{parser, engine::eval::INTRINSIC};
+use pink::parser;
 
 mod repl;
 

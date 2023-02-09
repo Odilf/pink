@@ -1,4 +1,3 @@
-structure FirstOrderLogic
 uses Sets
 
 # Predicates

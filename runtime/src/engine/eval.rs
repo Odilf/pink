@@ -3,7 +3,7 @@ use once_cell::sync::Lazy;
 
 use crate::parser::{ParseError, self};
 
-use super::{Structure, Token, Expression};
+use super::{Structure, Expression};
 
 /// The "instrinsic" structure is part of the language itself.
 /// 
@@ -23,18 +23,21 @@ pub enum LowerResult {
 
 impl Structure {
 	pub fn lower(&self, expression: Expression) -> LowerResult {
-		for start_index in 0..expression.tokens.len() {
-			for definition in &self.definitions {
-				if let Some(transformation) = definition.into_preferred(&expression.tokens[start_index..]) {
-					return LowerResult::Lowered(transformation);
-				}
+
+
+		for definition in &self.definitions {
+			if let Some(lower) = definition.lower(expression.tokens.as_slice()) {
+				println!("Matched definition: {definition}\n");
+				return LowerResult::Lowered(lower);
 			}
 		}
 
+		println!("Didn't find a definition that matches, expression is lowered all the way down.");
 		LowerResult::Unchanged(expression)
 	}
 
 	pub fn eval(&self, expression: Expression) -> Expression {
+		println!("lowering expression: {expression}");
 		match self.lower(expression) {
 			LowerResult::Lowered(lowered) => self.eval(lowered),
 			LowerResult::Unchanged(expression) => expression,
