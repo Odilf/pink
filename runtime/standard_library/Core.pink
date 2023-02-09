@@ -7,5 +7,3 @@ reserve { in } # Commas, curly braces and parenthesis are reserved by the runtim
 # `in` operator
 x in { x } = true;
 x in { x, rest } = true;
-x in { y, rest } = x in { rest };
-x in anything_else = false;

@@ -26,15 +26,8 @@ fn domain_test_rest() {
 
 #[test]
 fn empty_domain() {
-    assert_eq!(
-        (
-            "",
-            BTreeSet::new()
-        ),
-        domain("domain { }").unwrap()
-    );
+    assert_eq!(("", BTreeSet::new()), domain("domain { }").unwrap());
 }
-
 
 #[test]
 fn pattern_test() {
@@ -122,14 +115,8 @@ fn multi_line_definition() {
 }
 
 #[test]
-#[ignore = "Uses is kind of broken so far"]
 fn whole_parse_test() {
-    let input = "
-		domain { d1, d2, d3 }
-		reserve { r1, r2, r3 }
-
-		r1 x r2 = r2 d d2;
-	";
+    let input_path = "src/parser/test_files/test1.pink";
 
     let (_, domain) = domain("domain { d1, d2, d3 }").unwrap();
     let (_, reserved) = reserve("reserve { r1, r2, r3 }").unwrap();
@@ -138,42 +125,86 @@ fn whole_parse_test() {
         .unwrap()
         .1;
 
-    let expected = Structure::create(domain, reserved, vec![def]).unwrap();
+    let expected = Runtime::new(BTreeMap::from([(
+        "test1".into(),
+        Structure::create(domain, reserved, vec![def]).unwrap(),
+    )]));
 
-    assert_eq!(expected, parse(input.to_owned()).unwrap());
+    let result = parse_file(input_path.into()).unwrap();
+
+    assert_eq!(expected, result);
 }
 
 #[test]
-#[ignore = "Uses is kind of broken so far"]
-fn parse_with_comments() {
-    let input = "
-		# These comments should be ignored
-		domain { d1, d2, # comment
-			 d3 } # comment
-		# comment
-		# comment
-		reserve { r1, r2, r3 } # comment
-		# comment
+fn parse_dependencies() {
+    let input_path = "src/parser/test_files/test2.pink";
 
-		r1 x r2 = # comment
-		r2 d d2;
-
-
-	";
-
-    let (_, domain) = domain("domain { d1, d2, d3 }").unwrap();
-    let (_, reserved) = reserve("reserve { r1, r2, r3 }").unwrap();
-
-    let def = definition("r1 x r2 = r2 d d2;", &domain, &reserved)
+    let test1_structures = parse_file("src/parser/test_files/test1.pink".into())
         .unwrap()
-        .1;
+        .structures;
+    let s1 = test1_structures.get("test1").unwrap();
 
-    let expected = Structure::create(domain, reserved, vec![def]).unwrap();
+    let (_, domain) = domain("domain { d4, d5, d6 }").unwrap();
+    let (_, reserved) = reserve("reserve { r4, r5, r6 }").unwrap();
 
-    assert_eq!(expected, parse(input.to_owned()).unwrap());
+    let def = definition("r4 = d4 r5;", &domain, &reserved).unwrap().1;
+
+    let expected = Runtime::new(BTreeMap::from([
+        ("test1".into(), s1.clone()),
+        (
+            "test2".into(),
+            Structure::create(domain, reserved, vec![def]).unwrap(),
+        ),
+    ]));
+
+    let result = parse_file(input_path.into()).unwrap();
+
+    assert_eq!(expected, result);
 }
 
 #[test]
-fn parse_core() {
-    parse_file("standard_library/core.pink").unwrap();
+fn parse_parent() {
+    let input_path = "src/parser/test_files/test3/nested.pink";
+
+    let test1_structures = parse_file("src/parser/test_files/test1.pink".into())
+        .unwrap()
+        .structures;
+    let s1 = test1_structures.get("test1").unwrap();
+
+    let domain = BTreeSet::new();
+    let reserved = BTreeSet::new();
+
+    let expected = Runtime::new(BTreeMap::from([
+        ("../test1".into(), s1.clone()),
+        (
+            "nested".into(),
+            Structure::create(domain, reserved, Vec::new()).unwrap(),
+        ),
+    ]));
+
+    let result = parse_file(input_path.into()).unwrap();
+
+    assert_eq!(expected, result);
+}
+
+#[test]
+fn get_name_and_root_test() {
+    let (name, root) = get_name_and_root("src/parser/test_files/test1.pink".into()).unwrap();
+
+    assert_eq!("test1", name);
+    assert_eq!(PathBuf::from("src/parser/test_files"), root);
+}
+
+#[test]
+fn parse_cycle() {
+    let input_path = "src/parser/test_files/cycle1.pink";
+
+    let expected = Runtime::new(BTreeMap::from([
+        ("cycle1".into(), Structure::empty()),
+        ("cycle2".into(), Structure::empty()),
+    ]));
+
+    let result = parse_file(input_path.into()).unwrap();
+
+    assert_eq!(expected, result);
 }

@@ -1,0 +1,5 @@
+# This and `cycle2.pink` create a cycle
+
+domain {}
+reserve {}
+use { cycle2 }

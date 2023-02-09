@@ -1,5 +1,6 @@
 domain { t, f }
 reserve { and, or, not }
+use {}
 
 t and t = t;
 t and f = f;

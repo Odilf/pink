@@ -1,16 +1,25 @@
 #[cfg(test)]
 mod test;
 
-use std::{collections::BTreeSet, error::Error, fmt::Display, fs, io};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    error::Error,
+    fmt::Display,
+    fs, io,
+    path::{Path, PathBuf},
+};
 
 use nom::{
     bytes::complete::{tag as nom_tag, take_until as nom_take_until, take_while, take_while1},
     IResult,
 };
+
 // use regex::Regex;
 use regex_macro::regex;
 
-use crate::engine::{Definition, PatternToken, Structure, Token, StructureError, eval::INTRINSIC, Expression};
+use crate::engine::{
+    Definition, Expression, PatternToken, Runtime, Structure, StructureError, Token,
+};
 
 /// Trims the start of the input
 fn trim_start(input: &str) -> &str {
@@ -68,7 +77,11 @@ fn keyword_set<'a>(
 
     return Ok((
         input,
-        elements.split(",").map(|s| s.trim().to_owned()).filter(|s| s.len() > 0).collect(),
+        elements
+            .split(',')
+            .map(|s| s.trim().to_owned())
+            .filter(|s| !s.is_empty())
+            .collect(),
     ));
 }
 
@@ -80,22 +93,30 @@ fn reserve(input: &str) -> Result<(&str, BTreeSet<String>), ParseError> {
     keyword_set(input, "reserve")
 }
 
+// TODO: Make `use` optional
+fn parse_use(input: &str) -> Result<(&str, BTreeSet<String>), ParseError> {
+    keyword_set(input, "use")
+}
+
 /// Parses the *whole* input string as an expression
 fn pattern<'a>(
     input: &'a str,
     domain: &BTreeSet<String>,
     reserved: &BTreeSet<String>,
 ) -> Vec<PatternToken> {
-    if input.len() == 0 {
+    if input.is_empty() {
         return Vec::new();
     }
 
     let input = input.trim();
-    
+
     for literal in reserved {
         if let Ok(rest) = tag(literal.as_str())(input) {
             let mut pattern = pattern(rest, domain, reserved);
-            pattern.insert(0, PatternToken::Concrete(Token::Literal(literal.to_string())));
+            pattern.insert(
+                0,
+                PatternToken::Concrete(Token::Literal(literal.to_string())),
+            );
             return pattern;
         }
     }
@@ -103,13 +124,17 @@ fn pattern<'a>(
     for element in domain {
         if let Ok(rest) = tag(element.as_str())(input) {
             let mut pattern = pattern(rest, domain, reserved);
-            pattern.insert(0, PatternToken::Concrete(Token::Element(element.to_string())));
+            pattern.insert(
+                0,
+                PatternToken::Concrete(Token::Element(element.to_string())),
+            );
             return pattern;
         }
     }
 
-    let result: IResult<&str, &str> = take_while1(|c: char| c.is_alphanumeric() || c == '_')(input);
+    // TODO: Implement spread variables
 
+    let result: IResult<&str, &str> = take_while1(|c: char| c.is_alphanumeric() || c == '_')(input);
     let (rest, variable) = match result {
         Ok(result) => result,
         Err(_) => (&input[1..], &input[0..1]),
@@ -117,38 +142,38 @@ fn pattern<'a>(
 
     let mut pattern = pattern(rest, domain, reserved);
     pattern.insert(0, PatternToken::Variable(variable.to_string()));
-    return pattern; 
+    pattern
 }
 
 /// Parses the *whole* input string as an expression
-pub fn expression<'a>(
-    input: &'a str,
-    domain: &BTreeSet<String>,
-    reserved: &BTreeSet<String>,
-) -> Result<Expression, ParseError> {
-    if input.len() == 0 {
+pub fn expression(input: &str, runtime: &Runtime) -> Result<Expression, ParseError> {
+    if input.is_empty() {
         return Ok(Expression::new(Vec::new()));
     }
 
     let input = input.trim();
-    
-    for literal in reserved {
+
+    for literal in runtime.reserved() {
         if let Ok(rest) = tag(literal.as_str())(input) {
-            let mut expression = expression(rest, domain, reserved)?;
-            expression.tokens.insert(0, Token::Literal(literal.to_string()));
+            let mut expression = expression(rest, runtime)?;
+            expression
+                .tokens
+                .insert(0, Token::Literal(literal.to_string()));
             return Ok(expression);
         }
     }
 
-    for element in domain {
+    for element in runtime.domain() {
         if let Ok(rest) = tag(element.as_str())(input) {
-            let mut expression = expression(rest, domain, reserved)?;
-            expression.tokens.insert(0, Token::Element(element.to_string()));
+            let mut expression = expression(rest, runtime)?;
+            expression
+                .tokens
+                .insert(0, Token::Element(element.to_string()));
             return Ok(expression);
         }
     }
 
-    return Err(ParseError::UknownToken(input.to_string()));
+    Err(ParseError::UknownToken(input.to_string()))
 }
 
 fn definition<'a>(
@@ -165,7 +190,7 @@ fn definition<'a>(
 
     let definition = Definition::new(lhs, rhs);
 
-    return Ok((rest, definition));
+    Ok((rest, definition))
 }
 
 /// TODO: Maybe make a type for inputs with comments and without. To further ensure safety.
@@ -174,18 +199,64 @@ fn strip_comments(input: String) -> String {
     input.replace(regex!("#.*"), "")
 }
 
-pub fn parse(input: String) -> Result<Structure, ParseError> {
+fn get_name_and_root(path: PathBuf) -> Result<(String, PathBuf), ParseError> {
+    let name = path.file_name().unwrap();
+    let name = name.to_str().unwrap();
+    let name = &name[..name.len() - ".pink".len()];
+
+    let mut rest = path.clone();
+    rest.pop();
+
+    Ok((name.to_string(), rest))
+}
+
+pub fn parse_file(path: PathBuf) -> Result<Runtime, ParseError> {
+    let mut runtime = BTreeMap::new();
+
+    let (name, path) = get_name_and_root(path)?;
+
+    parse_file_into_runtime(&path, &name, &mut runtime)?;
+
+    let runtime = runtime
+        .into_iter()
+        .filter_map(|(name, structure)| structure.map(|structure| (name, structure)))
+        .collect();
+
+    Ok(Runtime::new(runtime))
+}
+
+/// Parses a file into a map `String -> Option<Structure>`. The `Option` is `None` if the file
+/// has not been parsed yet. This is used to prevent circular dependencies.
+fn parse_file_into_runtime(
+    root: &Path,
+    name: &str,
+    runtime: &mut BTreeMap<String, Option<Structure>>,
+) -> Result<(), ParseError> {
+    let input = match fs::read_to_string(root.join(format!("{name}.pink"))) {
+        Ok(input) => input,
+
+        // TODO: Maybe make this a `ParseError::FileNotFound` or something
+        Err(err) => return Err(ParseError::Io(err)),
+    };
+
     let input = strip_comments(input);
     let input = input.as_str();
 
-    let (input, mut domain) = domain(input)?;
-    let (input, mut reserved) = reserve(input)?;
+    let (input, domain) = domain(input)?;
+    let (input, reserved) = reserve(input)?;
+    let (input, dependencies) = parse_use(input)?;
 
-    // TODO: Implement actual dependencies and a dependency graph with `INTRINSIC` as the root. 
-    // This is very bad. 
-    domain.append(&mut INTRINSIC.domain.clone());
-    reserved.append(&mut INTRINSIC.reserved.clone());
+    for dependency in dependencies {
+        if runtime.contains_key(&dependency) {
+            continue;
+        }
 
+        runtime.insert(dependency.clone(), None);
+
+        parse_file_into_runtime(root, &dependency, runtime)?;
+    }
+
+    // Get definitions
     let mut definitions = Vec::new();
     let mut input = input;
     while let Ok((rest, definition)) = definition(input, &domain, &reserved) {
@@ -193,26 +264,16 @@ pub fn parse(input: String) -> Result<Structure, ParseError> {
         definitions.push(definition);
     }
 
-
-    let structure = match Structure::create(domain, reserved, definitions)  {
+    let structure = match Structure::create(domain, reserved, definitions) {
         Ok(structure) => structure,
         Err(StructureError::DomainAndReservedOverlap { culprit }) => {
             return Err(ParseError::DomainAndReservedOverlap { culprit })
         }
     };
 
-    return Ok(structure);
-}
+    runtime.insert(name.to_string(), Some(structure));
 
-pub fn parse_file(path: &str) -> Result<Structure, ParseError> {
-    let input = match fs::read_to_string(path) {
-        Ok(input) => input,
-        Err(e) => return Err(ParseError::Io(e)),
-    };
-
-    let input = strip_comments(input);
-
-    return parse(input);
+    Ok(())
 }
 
 #[derive(Debug)]

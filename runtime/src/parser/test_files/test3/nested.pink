@@ -1,0 +1,6 @@
+# This imports a parent
+
+domain {}
+reserve {}
+
+use { ../test1 }

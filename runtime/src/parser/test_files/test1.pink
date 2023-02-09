@@ -1,0 +1,7 @@
+# Simple test
+
+domain { d1, d2, d3 }
+reserve { r1, r2, r3 }
+use { }
+
+r1 x r2 = r2 d d2;
