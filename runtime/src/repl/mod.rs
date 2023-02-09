@@ -13,7 +13,7 @@ use termion::{
 static PROMPT: Lazy<String> = Lazy::new(|| format!("{}{}>>{} ", Fg(Magenta), Bold, Reset));
 
 pub fn run(runtime: Runtime) -> Result<()> {
-    println!("{:?}", runtime.structures.len());
+    // println!("{:?}", runtime.structures.len());
 
     let mut rl = Editor::<()>::new()?;
     if rl.load_history(".history.txt").is_err() {

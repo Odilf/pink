@@ -125,10 +125,13 @@ fn whole_parse_test() {
         .unwrap()
         .1;
 
-    let expected = Runtime::new(BTreeMap::from([(
-        "test1".into(),
-        Structure::create(domain, reserved, vec![def]).unwrap(),
-    )]));
+    let expected = Runtime::new(BTreeMap::from([
+        ("intrinsic".into(), Structure::intrinsic()),
+        (
+            "test1".into(),
+            Structure::create(domain, reserved, vec![def]).unwrap(),
+        ),
+    ]));
 
     let result = parse_file(input_path.into()).unwrap();
 
@@ -150,6 +153,7 @@ fn parse_dependencies() {
     let def = definition("r4 = d4 r5;", &domain, &reserved).unwrap().1;
 
     let expected = Runtime::new(BTreeMap::from([
+        ("intrinsic".into(), Structure::intrinsic()),
         ("test1".into(), s1.clone()),
         (
             "test2".into(),
@@ -175,6 +179,7 @@ fn parse_parent() {
     let reserved = BTreeSet::new();
 
     let expected = Runtime::new(BTreeMap::from([
+        ("intrinsic".into(), Structure::intrinsic()),
         ("../test1".into(), s1.clone()),
         (
             "nested".into(),
@@ -189,7 +194,7 @@ fn parse_parent() {
 
 #[test]
 fn get_name_and_root_test() {
-    let (name, root) = get_name_and_root("src/parser/test_files/test1.pink".into()).unwrap();
+    let (root, name) = get_root_and_name("src/parser/test_files/test1.pink".into()).unwrap();
 
     assert_eq!("test1", name);
     assert_eq!(PathBuf::from("src/parser/test_files"), root);
@@ -199,12 +204,5 @@ fn get_name_and_root_test() {
 fn parse_cycle() {
     let input_path = "src/parser/test_files/cycle1.pink";
 
-    let expected = Runtime::new(BTreeMap::from([
-        ("cycle1".into(), Structure::empty()),
-        ("cycle2".into(), Structure::empty()),
-    ]));
-
-    let result = parse_file(input_path.into()).unwrap();
-
-    assert_eq!(expected, result);
+    parse_file(input_path.into()).expect_err("Should find the circular dependency");
 }

@@ -1,17 +1,8 @@
-use once_cell::sync::Lazy;
 use std::collections::{BTreeSet, VecDeque};
 
 use crate::parser::{self, ParseError};
 
-use super::{Expression, Runtime, Structure};
-
-/// The "instrinsic" structure is part of the language itself.
-///
-/// It reserves curly braces, parentheses, and commas.
-pub static INTRINSIC: Lazy<Structure> = Lazy::new(|| {
-    let reserved = BTreeSet::from(["{", "}", ",", "(", ")"].map(|s| s.to_owned()));
-    Structure::create(BTreeSet::new(), reserved, Vec::new()).unwrap()
-});
+use super::{Expression, Runtime};
 
 pub enum LowerResult {
     Lowered(Expression),
@@ -59,8 +50,6 @@ impl Runtime {
                 queue.push_back(neighbour);
             }
         }
-
-        dbg!(&visited.len());
 
         visited
     }

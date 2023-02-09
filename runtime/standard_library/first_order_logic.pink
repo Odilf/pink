@@ -1,4 +1,4 @@
-uses Sets
+use Sets
 
 # Predicates
 def P(x) = x in P

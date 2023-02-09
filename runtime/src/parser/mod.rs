@@ -134,10 +134,10 @@ fn pattern<'a>(
 
     // TODO: Implement spread variables
 
-    let result: IResult<&str, &str> = take_while1(|c: char| c.is_alphanumeric() || c == '_')(input);
+    let result: IResult<&str, &str> = take_while1(|c: char| c.is_alphabetic() || c == '_')(input);
     let (rest, variable) = match result {
         Ok(result) => result,
-        Err(_) => (&input[1..], &input[0..1]),
+        Err(_) => (&input[1..], &input[0..1]), // Get one character if it's not alphabetic
     };
 
     let mut pattern = pattern(rest, domain, reserved);
@@ -199,23 +199,30 @@ fn strip_comments(input: String) -> String {
     input.replace(regex!("#.*"), "")
 }
 
-fn get_name_and_root(path: PathBuf) -> Result<(String, PathBuf), ParseError> {
+/// Splits a path into name and root.
+///
+/// TODO: I would expect there to be a better way to do this. But I can't find it. sad
+fn get_root_and_name(path: PathBuf) -> Result<(PathBuf, String), ParseError> {
     let name = path.file_name().unwrap();
     let name = name.to_str().unwrap();
     let name = &name[..name.len() - ".pink".len()];
 
-    let mut rest = path.clone();
-    rest.pop();
+    let mut root = path.clone();
+    root.pop();
 
-    Ok((name.to_string(), rest))
+    Ok((root, name.to_string()))
 }
 
+// TODO: Should generalize parsing to having a function that given a name returns a string, not being specific to the filesystem.
+// Would be useful for porting to web and using as a library, in general
 pub fn parse_file(path: PathBuf) -> Result<Runtime, ParseError> {
-    let mut runtime = BTreeMap::new();
+    // Add intrinsic to runtime by default
+    // TODO: Maybe this should be in it's own "setup" function or smth
+    let mut runtime = BTreeMap::from([("intrinsic".to_string(), Some(Structure::intrinsic()))]);
 
-    let (name, path) = get_name_and_root(path)?;
+    let (root, name) = get_root_and_name(path)?;
 
-    parse_file_into_runtime(&path, &name, &mut runtime)?;
+    parse_file_into_runtime(&root, &name, &mut runtime)?;
 
     let runtime = runtime
         .into_iter()
@@ -247,8 +254,21 @@ fn parse_file_into_runtime(
     let (input, dependencies) = parse_use(input)?;
 
     for dependency in dependencies {
-        if runtime.contains_key(&dependency) {
-            continue;
+        // Check for circular dependencies
+        match runtime.get(&dependency) {
+            // Already parsed
+            Some(Some(_)) => continue,
+
+            // Currently parsing
+            Some(None) => {
+                return Err(ParseError::CircularDependency {
+                    // TODO: Actually find cycles properly
+                    cycle: vec![dependency.clone(), name.to_string()],
+                });
+            }
+
+            // Not parsed yet
+            None => (),
         }
 
         runtime.insert(dependency.clone(), None);
@@ -280,6 +300,7 @@ fn parse_file_into_runtime(
 pub enum ParseError {
     Expected { expected: String, found: String },
     DomainAndReservedOverlap { culprit: String },
+    CircularDependency { cycle: Vec<String> },
     UknownToken(String),
 
     // For file handling shenaningans
@@ -294,6 +315,9 @@ impl Display for ParseError {
             }
             ParseError::DomainAndReservedOverlap { culprit } => {
                 format!("Domain and reserved overlap: {}", culprit)
+            }
+            ParseError::CircularDependency { cycle } => {
+                format!("Found circular dependency: {}", cycle.join(" -> "))
             }
             ParseError::UknownToken(token) => format!("Unknown token: {}", token),
             ParseError::Io(e) => format!("IO error: {}", e),

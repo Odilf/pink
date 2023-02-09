@@ -1,9 +1,10 @@
 domain { true, false }
 reserve { in } # Commas, curly braces and parenthesis are reserved by the runtime itself
+use { intrinsic }
 
 # Parenthesis unwrapping
 (x) = x;
 
 # `in` operator
-x in { x } = true;
-x in { x, rest } = true;
+# x in { x } = true;
+# x in { x, rest... } = true;
