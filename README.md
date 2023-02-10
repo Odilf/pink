@@ -1,6 +1,6 @@
 # pink
 
-A very minimal replecement based language. Intended for ressembling as closely as possible the "math way" to write stuff, in an extremely declarative fashion. 
+A very minimal replecement based DSL, intended for math. 
 
 WARNING: This is still in extremely early stages. Don't expected anything. 
 

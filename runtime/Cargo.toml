@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Odilf"]
 readme = "../README.md"
+description = "A very minimal replecement based DSL, intended for math."
+license = "GPL-3.0+"
+repository = "https://github.com/Odilf/pink"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
