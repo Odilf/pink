@@ -9,7 +9,7 @@ use std::{
     fmt::Display,
 };
 
-use crate::matching::get_match_bindings;
+use crate::{matching::get_match_bindings, parser::{ParseError, self}};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum Token {
@@ -245,6 +245,14 @@ impl Structure {
             definitions: Vec::new(),
         }
     }
+
+    pub fn get_reserved(&self) -> &BTreeSet<String> {
+        &self.reserved
+    }
+
+    pub fn get_domain(&self) -> &BTreeSet<String> {
+        &self.domain
+    }
 }
 
 impl Display for Structure {
@@ -298,24 +306,24 @@ impl Runtime {
     }
 
     /// Iterator that goes through each element in the domains of the structures of the runtime
-    pub fn domain(&self) -> impl Iterator<Item = String> + '_ {
+    pub fn domain(&self) -> impl Iterator<Item = &String> + '_ {
         self.structures
             .iter()
-            .flat_map(|(_name, structure)| structure.domain.iter().cloned())
+            .flat_map(|(_name, structure)| structure.domain.iter())
     }
 
     /// Iterator that goes through each literal in the reserved keywords of the structures of the runtime
-    pub fn reserved(&self) -> impl Iterator<Item = String> + '_ {
+    pub fn reserved(&self) -> impl Iterator<Item = &String> + '_ {
         self.structures
             .iter()
-            .flat_map(|(_name, structure)| structure.reserved.iter().cloned())
+            .flat_map(|(_name, structure)| structure.reserved.iter())
     }
 
     /// Iterator that goes through each literal in the reserved keywords of the structures of the runtime
-    pub fn definitions(&self) -> impl Iterator<Item = Definition> + '_ {
+    pub fn definitions(&self) -> impl Iterator<Item = &Definition> + '_ {
         self.structures
             .iter()
-            .flat_map(|(_name, structure)| structure.definitions.iter().cloned())
+            .flat_map(|(_name, structure)| structure.definitions.iter())
     }
 
     pub fn contains(&self, name: &str) -> bool {
@@ -324,5 +332,32 @@ impl Runtime {
 
     pub fn insert(&mut self, name: String, structure: Structure) -> Option<Structure> {
         self.structures.insert(name, structure)
+    }
+
+    pub fn from_partial(structures: &BTreeMap<String, Option<Structure>>) -> Self {
+        let mut runtime = Runtime::new(BTreeMap::new());
+
+        for (name, structure) in structures {
+            if let Some(structure) = structure {
+                runtime.insert(name.to_owned(), structure.to_owned());
+            }
+        }
+
+        runtime
+    }
+
+    pub fn parse_expression(&self, expression: &str) -> Result<Expression, ParseError> {
+        parser::expression(expression, self)
+    }
+}
+
+impl Display for Runtime {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (name, structure) in &self.structures {
+            writeln!(f, "{name}:")?;
+            writeln!(f, "{structure}")?;
+        }
+
+        Ok(())
     }
 }

@@ -4,6 +4,8 @@ use pink::engine::Runtime;
 use rustyline::error::ReadlineError;
 use rustyline::{Editor, Result};
 
+const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
+
 use termion::{
     color::{Fg, Magenta},
     style::{Bold, Reset},
@@ -13,7 +15,8 @@ use termion::{
 static PROMPT: Lazy<String> = Lazy::new(|| format!("{}{}>>{} ", Fg(Magenta), Bold, Reset));
 
 pub fn run(runtime: Runtime) -> Result<()> {
-    // println!("{:?}", runtime.structures.len());
+    println!("Welcome to {}{}Pink!{} (v{})\n", Fg(Magenta), Bold, Reset, VERSION.unwrap_or("unknown"));
+    println!("{runtime}");
 
     let mut rl = Editor::<()>::new()?;
     if rl.load_history(".history.txt").is_err() {
@@ -26,24 +29,16 @@ pub fn run(runtime: Runtime) -> Result<()> {
             Ok(line) => {
                 rl.add_history_entry(line.as_str());
 
-                let evaluated = match runtime.eval_str(line.as_str()) {
-                    Ok(evaluated) => evaluated,
+                let expression = match runtime.parse_expression(line.as_str()) {
+                    Ok(expression) => expression,
                     Err(err) => {
                         println!("{err}");
                         continue;
                     }
                 };
 
-                for (i, result) in evaluated.iter().enumerate() {
-                    match i {
-                        0 => println!("Main result: {result}\n"),
-                        1 => {
-                            println!("Other results:");
-                            println!("- {result}")
-                        }
-                        _ => println!("- {result}"),
-                    }
-                }
+                let result = runtime.eval(expression);
+                println!("Main result: {result}\n");
 
                 // Flush
                 println!();

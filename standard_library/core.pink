@@ -1,0 +1,13 @@
+# Core structure
+# Defines very basic stuff such as parenthesis unwrapping and equality
+
+domain { true, false }
+reserve { == } # Commas, curly braces and parenthesis are reserved by the runtime
+use { } 
+
+# Parenthesis unwrapping
+(x) = x;
+
+# Equality
+x == x = true;
+x == y = false; # This only works because the case where x == y is checked before!

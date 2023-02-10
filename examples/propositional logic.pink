@@ -1,0 +1,28 @@
+# Simple example for propositional logic
+# Does not resolve properly ambiguities
+# E.g.: it thinks that `~false or true` is both `(~false) or true` and `~(false or true)` 
+
+domain { true, false }
+reserve { not, ~, and, ^, or, V, ->, xor, nand, nor }
+use { }
+
+# Aliases
+not = ~;
+and = ^;
+or = V;
+
+# Not
+~true = false;
+~false = true;
+
+# And
+true ^ true = true;
+false ^ true = false;
+true ^ false = false;
+false ^ false = false;
+
+# Rest of them
+p V q = ~((~p) ^ (~q));
+p -> q = (~p) V q;
+p nand q = ~(p ^ q);
+p nor q = ~(p V q);

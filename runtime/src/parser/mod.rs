@@ -98,11 +98,27 @@ fn parse_use(input: &str) -> Result<(&str, BTreeSet<String>), ParseError> {
     keyword_set(input, "use")
 }
 
+fn get_reserved(runtime: &PartialRuntime) -> Vec<&String> {
+    runtime
+        .iter()
+        .filter_map(|(name, structure)| structure.as_ref().map(|s| (name, s)))
+        .flat_map(|(_name, structure)| structure.get_reserved().iter())
+        .collect()
+}
+
+fn get_domain(runtime: &PartialRuntime) -> Vec<&String> {
+    runtime
+        .iter()
+        .filter_map(|(name, structure)| structure.as_ref().map(|s| (name, s)))
+        .flat_map(|(_name, structure)| structure.get_domain().iter())
+        .collect()
+}
+
 /// Parses the *whole* input string as an expression
 fn pattern<'a>(
     input: &'a str,
-    domain: &BTreeSet<String>,
-    reserved: &BTreeSet<String>,
+    domain: &Vec<&String>,
+    reserved: &Vec<&String>,
 ) -> Vec<PatternToken> {
     if input.is_empty() {
         return Vec::new();
@@ -110,7 +126,7 @@ fn pattern<'a>(
 
     let input = input.trim();
 
-    for literal in reserved {
+    for literal in reserved.clone() {
         if let Ok(rest) = tag(literal.as_str())(input) {
             let mut pattern = pattern(rest, domain, reserved);
             pattern.insert(
@@ -121,7 +137,7 @@ fn pattern<'a>(
         }
     }
 
-    for element in domain {
+    for element in domain.clone() {
         if let Ok(rest) = tag(element.as_str())(input) {
             let mut pattern = pattern(rest, domain, reserved);
             pattern.insert(
@@ -178,23 +194,45 @@ pub fn expression(input: &str, runtime: &Runtime) -> Result<Expression, ParseErr
 
 fn definition<'a>(
     input: &'a str,
-    domain: &BTreeSet<String>,
-    reserved: &BTreeSet<String>,
+    domain: &Vec<&String>,
+    reserved: &Vec<&String>,
 ) -> Result<(&'a str, Definition), ParseError> {
+    let (rest, definition) = take_until(";")(input)?;
+    let definition = pattern(definition, domain, reserved);
+                                                                                    // TODO: This allocates a string for no reason
+    let mut sides = definition.split(|token| token == &PatternToken::Concrete(Token::Literal("=".to_string())));
+
+    let Some(lhs) = sides.next() else {
+        return Err(ParseError::Expected {
+            expected: "=".to_string(),
+            found: input.to_string(),
+        })
+    };
+
+    let Some(rhs) = sides.next() else {
+        return Err(ParseError::Expected {
+            expected: "=".to_string(),
+            found: input.to_string(),
+        })
+    };
+
+    assert!(sides.next().is_none(), "Too many `=` in definition!");
+
     // TODO: This currently would make things like `==` not work
-    let (rest, lhs) = take_until("=")(input)?;
-    let (rest, rhs) = take_until(";")(rest)?;
+    // let (rest, lhs) = take_until("=")(input)?;
+    // let (rest, rhs) = take_until(";")(rest)?;
 
-    let lhs = pattern(lhs, domain, reserved);
-    let rhs = pattern(rhs, domain, reserved);
+    // let lhs = pattern(lhs, domain, reserved);
+    // let rhs = pattern(rhs, domain, reserved);
 
-    let definition = Definition::new(lhs, rhs);
+    let definition = Definition::new(lhs.to_vec(), rhs.to_vec());
 
     Ok((rest, definition))
 }
 
 /// TODO: Maybe make a type for inputs with comments and without. To further ensure safety.
 /// Then we can add a trait and make it super generic! But that might be unecessary.
+/// It would be better to just rewrite the parser without nom in a nicer way tailored to the project.
 fn strip_comments(input: String) -> String {
     input.replace(regex!("#.*"), "")
 }
@@ -232,18 +270,24 @@ pub fn parse_file(path: PathBuf) -> Result<Runtime, ParseError> {
     Ok(Runtime::new(runtime))
 }
 
-/// Parses a file into a map `String -> Option<Structure>`. The `Option` is `None` if the file
-/// has not been parsed yet. This is used to prevent circular dependencies.
+// The `Option` is `None` if the file has not been parsed yet. This is used to prevent circular dependencies.
+type PartialRuntime = BTreeMap<String, Option<Structure>>;
+
+/// Parses a file into a partial runtime
 fn parse_file_into_runtime(
     root: &Path,
     name: &str,
-    runtime: &mut BTreeMap<String, Option<Structure>>,
+    runtime: &mut PartialRuntime,
 ) -> Result<(), ParseError> {
-    let input = match fs::read_to_string(root.join(format!("{name}.pink"))) {
+    let file_path = root.join(format!("{name}.pink"));
+    let input = match fs::read_to_string(&file_path) {
         Ok(input) => input,
 
         // TODO: Maybe make this a `ParseError::FileNotFound` or something
-        Err(err) => return Err(ParseError::Io(err)),
+        Err(err) => {
+            println!("Path {:?} doesn't exists, apparently", file_path);
+            return Err(ParseError::Io(err))
+        },
     };
 
     let input = strip_comments(input);
@@ -277,9 +321,16 @@ fn parse_file_into_runtime(
     }
 
     // Get definitions
+    // TODO: Check here for collisions between domain and reserved
+    let mut full_domain = get_domain(runtime);
+    full_domain.extend(domain.iter());
+
+    let mut full_reserved = get_reserved(runtime);
+    full_reserved.extend(reserved.iter());
+
     let mut definitions = Vec::new();
     let mut input = input;
-    while let Ok((rest, definition)) = definition(input, &domain, &reserved) {
+    while let Ok((rest, definition)) = definition(input, &full_domain, &full_reserved) {
         input = rest;
         definitions.push(definition);
     }
@@ -319,7 +370,7 @@ impl Display for ParseError {
             ParseError::CircularDependency { cycle } => {
                 format!("Found circular dependency: {}", cycle.join(" -> "))
             }
-            ParseError::UknownToken(token) => format!("Unknown token: {}", token),
+            ParseError::UknownToken(token) => format!("Unknown token in: \"{}\"", token),
             ParseError::Io(e) => format!("IO error: {}", e),
         };
 

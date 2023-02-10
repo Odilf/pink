@@ -1,7 +1,5 @@
 use std::collections::{BTreeSet, VecDeque};
 
-use crate::parser::{self, ParseError};
-
 use super::{Expression, Runtime};
 
 pub enum LowerResult {
@@ -22,6 +20,7 @@ impl Runtime {
                         lowered.extend(expression.tokens[window_start + size..].to_vec());
 
                         neighbours.insert(Expression::new(lowered));
+                        break;
                     }
                 }
             }
@@ -30,8 +29,12 @@ impl Runtime {
         neighbours
     }
 
+    pub fn eval(&self, expression: Expression) -> Expression {
+        self.evaluations(expression).iter().next().expect("Should have at least the original expression").clone()
+    }
+
     /// Returns a set of all possible evaluations
-    pub fn eval(&self, expression: Expression) -> BTreeSet<Expression> {
+    pub fn evaluations(&self, expression: Expression) -> BTreeSet<Expression> {
         let mut visited = BTreeSet::new();
         let mut queue = VecDeque::new();
 
@@ -52,11 +55,5 @@ impl Runtime {
         }
 
         visited
-    }
-
-    pub fn eval_str(&self, input: &str) -> Result<BTreeSet<Expression>, ParseError> {
-        let expression = parser::expression(input, self)?;
-
-        Ok(self.eval(expression))
     }
 }
