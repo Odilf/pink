@@ -172,7 +172,7 @@ impl Display for Definition {
             write!(f, "{} ", token)?;
         }
 
-        write!(f, "= ")?;
+        write!(f, "=> ")?;
 
         for token in &self.low {
             write!(f, "{} ", token)?;

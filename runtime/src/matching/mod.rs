@@ -5,10 +5,10 @@ use std::collections::BTreeMap;
 
 use crate::engine::{PatternToken, Token};
 
-type Bindings<'a, 'b> = (
-    BTreeMap<&'a String, &'b Token>,   // Single bindings
-    BTreeMap<&'a String, &'b [Token]>, // Spread bindings
-);
+type SingleBindings<'a, 'b> = BTreeMap<&'a String, &'b Token>;
+type SpreadBindings<'a, 'b> = BTreeMap<&'a String, &'b [Token]>;
+
+type Bindings<'a, 'b> = (SingleBindings<'a, 'b>, SpreadBindings<'a, 'b>);
 
 pub fn get_match_bindings<'a, 'b>(
     pattern: &'a [PatternToken],
@@ -30,8 +30,8 @@ pub fn get_match_bindings<'a, 'b>(
 fn match_bindings_recurse<'a, 'b>(
     pattern: &'a [PatternToken],
     expression: &'b [Token],
-    single_bindings: &mut BTreeMap<&'a String, &'b Token>,
-    spread_bindings: &mut BTreeMap<&'a String, &'b [Token]>,
+    single_bindings: &mut SingleBindings<'a, 'b>,
+    spread_bindings: &mut SpreadBindings<'a, 'b>,
 ) -> Option<()> {
     let (pattern_token, token) = match (pattern.get(0), expression.get(0)) {
         (Some(pattern_token), Some(token)) => (pattern_token, token),

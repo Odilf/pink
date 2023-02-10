@@ -45,7 +45,7 @@ pub fn run(runtime: Runtime, debug: bool) -> Result<()> {
                 };
 
                 if !debug {
-                    println!("Result: {}", runtime.eval(expression));
+                    println!(" = {}", runtime.eval(expression));
                 } else {
                     println!("Parsed expression: {expression}");
 

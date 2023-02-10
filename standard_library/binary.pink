@@ -1,0 +1,31 @@
+domain { 0, 1 }
+reserve { 
+	dec0, dec1, dec2, dec3, dec4, dec5, dec6, dec7, dec8, dec9,
+	+
+}
+use { core }
+
+# Remove leading 0s
+# 0x = x;
+
+# Decimal to binary
+dec0 =    0;
+dec1 =    1;
+dec2 =   10;
+dec3 =   11;
+dec4 =  100;
+dec5 =  101;
+dec6 =  110;
+dec7 =  111;
+dec8 = 1000;
+dec9 = 1001;
+
+# Addition
+0 + 0 = 0;
+0 + 1 = 1;
+1 + 0 = 1;
+1 + 1 = 0;
+
+x...0 + y...0 = (x... + y...)0;
+x...1 + y...0 = (x... + y...)1;
+x...0 + y...1 = (x... + y...)1;
