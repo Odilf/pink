@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod test;
+mod resolvers;
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -148,12 +149,14 @@ fn pattern<'a>(
         }
     }
 
+    // Normal variable
     let result: IResult<_, _> = take_while1(|c: char| c.is_alphabetic() || c == '_')(input);
     let (rest, variable) = match result {
         Ok(result) => result,
         Err(_) => (&input[1..], &input[0..1]), // Get one character if it's not alphabetic
     };
 
+    // Spread variables
     // TODO: Uggo
     let result: IResult<_, _> = nom_tag("...")(rest);
     match result {
@@ -225,13 +228,14 @@ fn definition<'a>(
     };
 
     // TODO: Just... allow this lol
-    assert!(sides.next().is_none(), "Too many `=>` or `<=>` in definition");
+    assert!(
+        sides.next().is_none(),
+        "Too many `=>` or `<=>` in definition"
+    );
 
     let double = lhs.chars().last() == Some('<');
 
-    let lhs = if double {
-        &lhs[..lhs.len() - 1]
-    } else { lhs };
+    let lhs = if double { &lhs[..lhs.len() - 1] } else { lhs };
 
     let lhs = pattern(lhs, domain, reserved);
     let rhs = pattern(rhs, domain, reserved);
@@ -254,32 +258,15 @@ fn strip_comments(input: String) -> String {
     input.replace(regex!("#.*"), "")
 }
 
-/// Splits a path into name and root.
-///
-/// TODO: I would expect there to be a better way to do this. But I can't find it. sad
-fn get_root_and_name(path: PathBuf) -> Result<(PathBuf, String), ParseError> {
-    let name = path.file_name().unwrap();
-    let name = name.to_str().unwrap();
-    let name = &name[..name.len() - ".pink".len()];
+pub fn parse(name: &str, resolver: impl Fn(&str) -> Option<String>) -> Result<Runtime, ParseError> {
+    let mut partial_runtime =
+        BTreeMap::from([("intrinsic".to_string(), Some(Structure::intrinsic()))]);
 
-    let mut root = path.clone();
-    root.pop();
+    let input = resolver(name).unwrap();
 
-    Ok((root, name.to_string()))
-}
+    parse_into_runtime(&input, name, &resolver, &mut partial_runtime)?;
 
-// TODO: Should generalize parsing to having a function that given a name returns a string, not being specific to the filesystem.
-// Would be useful for porting to web and using as a library, in general
-pub fn parse_file(path: PathBuf) -> Result<Runtime, ParseError> {
-    // Add intrinsic to runtime by default
-    // TODO: Maybe this should be in it's own "setup" function or smth
-    let mut runtime = BTreeMap::from([("intrinsic".to_string(), Some(Structure::intrinsic()))]);
-
-    let (root, name) = get_root_and_name(path)?;
-
-    parse_file_into_runtime(&root, &name, &mut runtime)?;
-
-    let runtime = runtime
+    let runtime = partial_runtime
         .into_iter()
         .filter_map(|(name, structure)| structure.map(|structure| (name, structure)))
         .collect();
@@ -290,55 +277,24 @@ pub fn parse_file(path: PathBuf) -> Result<Runtime, ParseError> {
 // The `Option` is `None` if the file has not been parsed yet. This is used to prevent circular dependencies.
 type PartialRuntime = BTreeMap<String, Option<Structure>>;
 
-/// Parses a file into a partial runtime
-fn parse_file_into_runtime(
-    root: &Path,
+fn parse_into_runtime(
+    input: &str,
     name: &str,
+    resolver: &impl Fn(&str) -> Option<String>,
     runtime: &mut PartialRuntime,
 ) -> Result<(), ParseError> {
-    let file_path = root.join(format!("{name}.pink"));
-    let input = match fs::read_to_string(&file_path) {
-        Ok(input) => input,
+    let input = strip_comments(input.to_string());
 
-        // TODO: Maybe make this a `ParseError::FileNotFound` or something
-        Err(err) => {
-            println!("Path {:?} doesn't exists, apparently", file_path);
-            return Err(ParseError::Io(err));
-        }
-    };
-
-    let input = strip_comments(input);
-    let input = input.as_str();
-
-    let (input, domain) = domain(input)?;
+    // let mut input = &input[..];
+    let (input, domain) = domain(&input)?;
     let (input, reserved) = reserve(input)?;
     let (input, dependencies) = parse_use(input)?;
 
-    for dependency in dependencies {
-        // Check for circular dependencies
-        match runtime.get(&dependency) {
-            // Already parsed
-            Some(Some(_)) => continue,
-
-            // Currently parsing
-            Some(None) => {
-                return Err(ParseError::CircularDependency {
-                    // TODO: Actually find cycles properly
-                    cycle: vec![dependency.clone(), name.to_string()],
-                });
-            }
-
-            // Not parsed yet
-            None => (),
-        }
-
-        runtime.insert(dependency.clone(), None);
-
-        parse_file_into_runtime(root, &dependency, runtime)?;
+    for dependecy in dependencies {
+        let dependecy_program = resolver(&dependecy).expect("Hande failures of resolver (basically not finding files)");
+        parse_into_runtime(&dependecy_program, name, resolver, runtime)?;
     }
 
-    // Get definitions
-    // TODO: Check here for collisions between domain and reserved
     let full_domain = domain.iter().chain(get_domain(runtime)).collect();
     let full_reserved = reserved.iter().chain(get_reserved(runtime)).collect();
 
@@ -359,6 +315,13 @@ fn parse_file_into_runtime(
     runtime.insert(name.to_string(), Some(structure));
 
     Ok(())
+}
+
+pub fn parse_file(path: PathBuf) -> Result<Runtime, ParseError> {
+    let (root, name) = resolvers::get_root_and_name(path);
+    let resolver = resolvers::file_resolver(root);
+
+    parse(name.as_str(), resolver)
 }
 
 #[derive(Debug)]
