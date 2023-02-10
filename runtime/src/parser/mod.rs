@@ -168,8 +168,6 @@ fn pattern<'a>(
             pattern
         }
     }
-
-    
 }
 
 /// Parses the *whole* input string as an expression
@@ -210,7 +208,6 @@ fn definition<'a>(
 ) -> Result<(&'a str, Definition), ParseError> {
     let (rest, definition) = take_until(";")(input)?;
 
-    
     let definition = pattern(definition, domain, reserved);
     // TODO: This allocates a string for no reason
     let mut sides =

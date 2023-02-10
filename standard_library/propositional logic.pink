@@ -1,0 +1,3 @@
+domain { }
+reserve { and, or, not, nor, nand, xor, -> }
+use { sets }

@@ -23,7 +23,7 @@ pub fn run(runtime: Runtime, debug: bool) -> Result<()> {
     }
 
     print!("Welcome to {}{}Pink!{}", Fg(Magenta), Bold, Reset);
-    println!(" (v{})\n", VERSION.unwrap_or("unknown"));
+    println!(" (v{})", VERSION.unwrap_or("unknown"));
 
     let mut rl = Editor::<()>::new()?;
     if rl.load_history(HISTORY_FILE).is_err() {
