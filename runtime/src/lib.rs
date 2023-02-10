@@ -1,3 +1,6 @@
-pub mod engine;
-pub mod matching;
-pub mod parser;
+mod engine;
+mod matching;
+mod parser;
+
+pub use parser::parse_file;
+pub use engine::Runtime;

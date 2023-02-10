@@ -46,7 +46,11 @@ fn pattern_test() {
             PatternToken::Variable("x".to_owned()),
             PatternToken::Concrete(Token::Literal("r3".to_owned())),
         ],
-        pattern("r1 d2 x r3", &domain.iter().collect(), &reserved.iter().collect())
+        pattern(
+            "r1 d2 x r3",
+            &domain.iter().collect(),
+            &reserved.iter().collect()
+        )
     );
 }
 
@@ -72,7 +76,11 @@ fn pattern_with_comments() {
             PatternToken::Variable("x".to_owned()),
             PatternToken::Concrete(Token::Literal("r3".to_owned())),
         ],
-        pattern(input.as_str(), &domain.iter().collect(), &reserved.iter().collect())
+        pattern(
+            input.as_str(),
+            &domain.iter().collect(),
+            &reserved.iter().collect()
+        )
     );
 }
 
@@ -83,8 +91,16 @@ fn simple_definition() {
 
     let input = "r1 x r2 = r2 d d2; lol";
 
-    let lhs = pattern("r1 x r2", &domain.iter().collect(), &reserved.iter().collect());
-    let rhs = pattern("r2 d d2", &domain.iter().collect(), &reserved.iter().collect());
+    let lhs = pattern(
+        "r1 x r2",
+        &domain.iter().collect(),
+        &reserved.iter().collect(),
+    );
+    let rhs = pattern(
+        "r2 d d2",
+        &domain.iter().collect(),
+        &reserved.iter().collect(),
+    );
 
     let expected = Definition::new(lhs, rhs);
 
@@ -103,8 +119,16 @@ fn multi_line_definition() {
 	
 	r2 d d2; lol";
 
-    let lhs = pattern("r1 x r2", &domain.iter().collect(), &reserved.iter().collect());
-    let rhs = pattern("r2 d d2", &domain.iter().collect(), &reserved.iter().collect());
+    let lhs = pattern(
+        "r1 x r2",
+        &domain.iter().collect(),
+        &reserved.iter().collect(),
+    );
+    let rhs = pattern(
+        "r2 d d2",
+        &domain.iter().collect(),
+        &reserved.iter().collect(),
+    );
 
     let expected = Definition::new(lhs, rhs);
 
@@ -121,9 +145,13 @@ fn whole_parse_test() {
     let (_, domain) = domain("domain { d1, d2, d3 }").unwrap();
     let (_, reserved) = reserve("reserve { r1, r2, r3 }").unwrap();
 
-    let def = definition("r1 x r2 = r2 d d2;", &domain.iter().collect(), &reserved.iter().collect())
-        .unwrap()
-        .1;
+    let def = definition(
+        "r1 x r2 = r2 d d2;",
+        &domain.iter().collect(),
+        &reserved.iter().collect(),
+    )
+    .unwrap()
+    .1;
 
     let expected = Runtime::new(BTreeMap::from([
         ("intrinsic".into(), Structure::intrinsic()),
@@ -150,7 +178,13 @@ fn parse_dependencies() {
     let (_, domain) = domain("domain { d4, d5, d6 }").unwrap();
     let (_, reserved) = reserve("reserve { r4, r5, r6 }").unwrap();
 
-    let def = definition("r4 = d4 r5;", &domain.iter().collect(), &reserved.iter().collect()).unwrap().1;
+    let def = definition(
+        "r4 = d4 r5;",
+        &domain.iter().collect(),
+        &reserved.iter().collect(),
+    )
+    .unwrap()
+    .1;
 
     let expected = Runtime::new(BTreeMap::from([
         ("intrinsic".into(), Structure::intrinsic()),

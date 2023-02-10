@@ -9,7 +9,10 @@ use std::{
     fmt::Display,
 };
 
-use crate::{matching::get_match_bindings, parser::{ParseError, self}};
+use crate::{
+    matching::get_match_bindings,
+    parser::{self, ParseError},
+};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum Token {
@@ -224,11 +227,11 @@ impl Structure {
         Ok(self)
     }
 
-    /// The "instrinsic" structure is defined by the language itself
+    /// The "intrinsic" structure is defined by the language itself
     ///
     /// It reserves curly braces, parentheses, and commas.
     pub fn intrinsic() -> Self {
-        let reserved = BTreeSet::from(["{", "}", ",", "(", ")"].map(|s| s.to_owned()));
+        let reserved = BTreeSet::from(["{", "}", ",", "(", ")", "="].map(|s| s.to_owned()));
 
         Structure {
             domain: BTreeSet::new(),

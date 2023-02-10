@@ -2,11 +2,6 @@ use std::collections::{BTreeSet, VecDeque};
 
 use super::{Expression, Runtime};
 
-pub enum LowerResult {
-    Lowered(Expression),
-    Unchanged(Expression),
-}
-
 impl Runtime {
     fn get_lower_neighbours(&self, expression: Expression) -> BTreeSet<Expression> {
         let mut neighbours = BTreeSet::new();
@@ -29,8 +24,13 @@ impl Runtime {
         neighbours
     }
 
+    /// Returns the lowest possible evaluation
     pub fn eval(&self, expression: Expression) -> Expression {
-        self.evaluations(expression).iter().next().expect("Should have at least the original expression").clone()
+        self.evaluations(expression)
+            .iter()
+            .next()
+            .expect("Should have at least the original expression")
+            .clone()
     }
 
     /// Returns a set of all possible evaluations

@@ -148,17 +148,28 @@ fn pattern<'a>(
         }
     }
 
-    // TODO: Implement spread variables
-
-    let result: IResult<&str, &str> = take_while1(|c: char| c.is_alphabetic() || c == '_')(input);
+    let result: IResult<_, _> = take_while1(|c: char| c.is_alphabetic() || c == '_')(input);
     let (rest, variable) = match result {
         Ok(result) => result,
         Err(_) => (&input[1..], &input[0..1]), // Get one character if it's not alphabetic
     };
 
-    let mut pattern = pattern(rest, domain, reserved);
-    pattern.insert(0, PatternToken::Variable(variable.to_string()));
-    pattern
+    // TODO: Uggo
+    let result: IResult<_, _> = nom_tag("...")(rest);
+    match result {
+        Ok((rest, _)) => {
+            let mut pattern = pattern(rest, domain, reserved);
+            pattern.insert(0, PatternToken::SpreadVariable(variable.to_string()));
+            pattern
+        }
+        Err(_) => {
+            let mut pattern = pattern(rest, domain, reserved);
+            pattern.insert(0, PatternToken::Variable(variable.to_string()));
+            pattern
+        }
+    }
+
+    
 }
 
 /// Parses the *whole* input string as an expression
@@ -198,9 +209,12 @@ fn definition<'a>(
     reserved: &Vec<&String>,
 ) -> Result<(&'a str, Definition), ParseError> {
     let (rest, definition) = take_until(";")(input)?;
+
+    
     let definition = pattern(definition, domain, reserved);
-                                                                                    // TODO: This allocates a string for no reason
-    let mut sides = definition.split(|token| token == &PatternToken::Concrete(Token::Literal("=".to_string())));
+    // TODO: This allocates a string for no reason
+    let mut sides =
+        definition.split(|token| token == &PatternToken::Concrete(Token::Literal("=".to_string())));
 
     let Some(lhs) = sides.next() else {
         return Err(ParseError::Expected {
@@ -286,8 +300,8 @@ fn parse_file_into_runtime(
         // TODO: Maybe make this a `ParseError::FileNotFound` or something
         Err(err) => {
             println!("Path {:?} doesn't exists, apparently", file_path);
-            return Err(ParseError::Io(err))
-        },
+            return Err(ParseError::Io(err));
+        }
     };
 
     let input = strip_comments(input);
@@ -322,11 +336,8 @@ fn parse_file_into_runtime(
 
     // Get definitions
     // TODO: Check here for collisions between domain and reserved
-    let mut full_domain = get_domain(runtime);
-    full_domain.extend(domain.iter());
-
-    let mut full_reserved = get_reserved(runtime);
-    full_reserved.extend(reserved.iter());
+    let full_domain = domain.iter().chain(get_domain(runtime)).collect();
+    let full_reserved = reserved.iter().chain(get_reserved(runtime)).collect();
 
     let mut definitions = Vec::new();
     let mut input = input;

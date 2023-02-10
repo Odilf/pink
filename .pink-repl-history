@@ -1,0 +1,33 @@
+#V2
+lol
+false in false
+false or false
+p and q
+false and true
+false or true
+false in false
+(false)
+false == false
+false == true
+false == false
+false == true
+(false == true) == false
+false in { false, true }
+false in { true, false }
+false in { false, false }
+true in { false, false, false, false in { false }}
+true in { false, false, false, false in { true }}
+false in { true }
+true in { false, false, false, false in { true }}
+false in { false }
+false in { true }
+true in { false }
+true in { true }
+true in { false, true, false }
+true in { false, , false }
+true in { false, false }
+false in { false }
+false in false 
+false in { false }
+Yaay
+clear

@@ -10,4 +10,4 @@ use { }
 
 # Equality
 x == x = true;
-x == y = false; # This only works because the case where x == y is checked before!
+x == y = false; # Note: this only works because the case where x == y is matched before

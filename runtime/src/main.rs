@@ -1,22 +1,24 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use pink::parser;
+use pink_runtime::parse_file;
 
 mod repl;
 
 fn main() {
     let cli = Cli::parse();
-    
-    let path = cli.path.unwrap();
-    dbg!(path.as_path());
-    let structure = parser::parse_file(path).unwrap();
 
-    repl::run(structure).unwrap();
+    let path = cli.path.unwrap();
+    let structure = parse_file(path).unwrap();
+
+    repl::run(structure, cli.debug).unwrap();
 }
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
     path: Option<PathBuf>,
+
+    #[clap(short, long, default_value_t = false)]
+    debug: bool,
 }

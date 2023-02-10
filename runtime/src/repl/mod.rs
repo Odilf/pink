@@ -1,25 +1,32 @@
 use once_cell::sync::Lazy;
-use pink::engine::Runtime;
 
 use rustyline::error::ReadlineError;
 use rustyline::{Editor, Result};
-
-const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
 
 use termion::{
     color::{Fg, Magenta},
     style::{Bold, Reset},
 };
 
+use pink_runtime::Runtime;
+
+const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
+const HISTORY_FILE: &str = ".pink-repl-history";
+
 // TODO: Would be nice if this was `const`
 static PROMPT: Lazy<String> = Lazy::new(|| format!("{}{}>>{} ", Fg(Magenta), Bold, Reset));
 
-pub fn run(runtime: Runtime) -> Result<()> {
-    println!("Welcome to {}{}Pink!{} (v{})\n", Fg(Magenta), Bold, Reset, VERSION.unwrap_or("unknown"));
-    println!("{runtime}");
+pub fn run(runtime: Runtime, debug: bool) -> Result<()> {
+    if debug {
+        println!("Debug mode enabled");
+        println!("{runtime}");
+    }
+
+    print!("Welcome to {}{}Pink!{}", Fg(Magenta), Bold, Reset);
+    println!(" (v{})\n", VERSION.unwrap_or("unknown"));
 
     let mut rl = Editor::<()>::new()?;
-    if rl.load_history(".history.txt").is_err() {
+    if rl.load_history(HISTORY_FILE).is_err() {
         println!("No previous history.");
     }
 
@@ -37,11 +44,18 @@ pub fn run(runtime: Runtime) -> Result<()> {
                     }
                 };
 
-                let result = runtime.eval(expression);
-                println!("Main result: {result}\n");
+                if !debug {
+                    println!("Result: {}", runtime.eval(expression));
+                } else {
+                    println!("Parsed expression: {expression}");
 
-                // Flush
-                println!();
+                    let results = runtime.evaluations(expression);
+
+                    println!("Results: ");
+                    for (i, result) in results.iter().enumerate() {
+                        println!("  {i}. {result}");
+                    }
+                }
             }
 
             Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
@@ -56,5 +70,5 @@ pub fn run(runtime: Runtime) -> Result<()> {
         }
     }
 
-    rl.save_history(".history.txt")
+    rl.save_history(HISTORY_FILE)
 }

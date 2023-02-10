@@ -1,0 +1,11 @@
+# Sets and set operations
+domain { }
+reserve { in }
+use { core }
+
+# In operator
+x in { } = false;
+x in { x } = true;
+x in { y } = false;
+x in { x, rest... } = true;
+x in { y, rest... } = x in { rest... };
