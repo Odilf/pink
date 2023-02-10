@@ -205,40 +205,46 @@ fn definition<'a>(
     input: &'a str,
     domain: &Vec<&String>,
     reserved: &Vec<&String>,
-) -> Result<(&'a str, Definition), ParseError> {
+) -> Result<(&'a str, Vec<Definition>), ParseError> {
     let (rest, definition) = take_until(";")(input)?;
 
-    let definition = pattern(definition, domain, reserved);
-    // TODO: This allocates a string for no reason
-    let mut sides =
-        definition.split(|token| token == &PatternToken::Concrete(Token::Literal("=".to_string())));
+    let mut sides = definition.split("=>");
 
     let Some(lhs) = sides.next() else {
         return Err(ParseError::Expected {
-            expected: "=".to_string(),
-            found: input.to_string(),
+            expected: "=> or <=>".to_string(),
+            found: rest.to_string(),
         })
     };
 
     let Some(rhs) = sides.next() else {
         return Err(ParseError::Expected {
-            expected: "=".to_string(),
-            found: input.to_string(),
+            expected: "something after => or <=>".to_string(),
+            found: rest.to_string(),
         })
     };
 
-    assert!(sides.next().is_none(), "Too many `=` in definition!");
+    // TODO: Just... allow this lol
+    assert!(sides.next().is_none(), "Too many `=>` or `<=>` in definition");
 
-    // TODO: This currently would make things like `==` not work
-    // let (rest, lhs) = take_until("=")(input)?;
-    // let (rest, rhs) = take_until(";")(rest)?;
+    let double = lhs.chars().last() == Some('<');
 
-    // let lhs = pattern(lhs, domain, reserved);
-    // let rhs = pattern(rhs, domain, reserved);
+    let lhs = if double {
+        &lhs[..lhs.len() - 1]
+    } else { lhs };
 
-    let definition = Definition::new(lhs.to_vec(), rhs.to_vec());
+    let lhs = pattern(lhs, domain, reserved);
+    let rhs = pattern(rhs, domain, reserved);
 
-    Ok((rest, definition))
+    let mut result = Vec::new();
+
+    result.push(Definition::new(lhs.to_vec(), rhs.to_vec()));
+
+    if double {
+        result.push(Definition::new(rhs, lhs));
+    }
+
+    Ok((rest, result))
 }
 
 /// TODO: Maybe make a type for inputs with comments and without. To further ensure safety.
@@ -338,9 +344,9 @@ fn parse_file_into_runtime(
 
     let mut definitions = Vec::new();
     let mut input = input;
-    while let Ok((rest, definition)) = definition(input, &full_domain, &full_reserved) {
+    while let Ok((rest, mut parsed_definitions)) = definition(input, &full_domain, &full_reserved) {
         input = rest;
-        definitions.push(definition);
+        definitions.append(&mut parsed_definitions);
     }
 
     let structure = match Structure::create(domain, reserved, definitions) {

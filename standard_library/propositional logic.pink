@@ -3,20 +3,20 @@ reserve { not, and, or, ->, nand, nor, xor }
 use { sets }
 
 # Not
-not false = true;
-not true = false;
+not false => true;
+not true => false;
 
 # And
-true and true = true;
-p and q = false;
+true and true => true;
+p and q => false;
 
 # Or
 p or q = not((not p) and (not q));
 
 # Implies
-p -> q = (not p) or q;
+p -> q => (not p) or q;
 
 # Inverses
-p nand q = not (p and q);
-p nor q = not (p or q); # Equivalent to `(not p) and (not q)`
-p xor q = not (p -> q);
+p nand q => not (p and q);
+p nor q => not (p or q); # Equivalent to `(not p) and (not q)`
+p xor q => not (p -> q);
