@@ -22,7 +22,7 @@ pub fn run(runtime: Runtime, debug: bool) -> Result<()> {
         println!("{runtime}");
     }
 
-    print!("Welcome to {}{}Pink!{}", Fg(Magenta), Bold, Reset);
+    print!("Welcome to {}{}pink!{}", Fg(Magenta), Bold, Reset);
     println!(" (v{})", VERSION.unwrap_or("unknown"));
 
     let mut rl = Editor::<()>::new()?;
@@ -59,7 +59,6 @@ pub fn run(runtime: Runtime, debug: bool) -> Result<()> {
             }
 
             Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
-                println!("Ending session");
                 break;
             }
 
