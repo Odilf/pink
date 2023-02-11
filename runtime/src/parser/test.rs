@@ -1,3 +1,9 @@
+use crate::engine::Definition;
+use crate::engine::PatternToken;
+use crate::parser::resolvers::get_root_and_name;
+use crate::parser::standalone::pattern;
+use std::collections::BTreeSet;
+
 use crate::engine::Token;
 
 use super::*;
@@ -89,7 +95,7 @@ fn simple_definition() {
     let (_, domain) = domain("domain { d1, d2, d3 }").unwrap();
     let (_, reserved) = reserve("reserve { r1, r2, r3 }").unwrap();
 
-    let input = "r1 x r2 = r2 d d2; lol";
+    let input = "r1 x r2 => r2 d d2; lol";
 
     let lhs = pattern(
         "r1 x r2",
@@ -105,7 +111,7 @@ fn simple_definition() {
     let expected = Definition::new(lhs, rhs);
 
     assert_eq!(
-        (" lol", expected),
+        (" lol", vec![expected]),
         definition(input, &domain.iter().collect(), &reserved.iter().collect()).unwrap(),
     );
 }
@@ -115,7 +121,7 @@ fn multi_line_definition() {
     let (_, domain) = domain("domain { d1, d2, d3 }").unwrap();
     let (_, reserved) = reserve("reserve { r1, r2, r3 }").unwrap();
 
-    let input = "r1 x r2 = 
+    let input = "r1 x r2 => 
 	
 	r2 d d2; lol";
 
@@ -133,7 +139,7 @@ fn multi_line_definition() {
     let expected = Definition::new(lhs, rhs);
 
     assert_eq!(
-        (" lol", expected),
+        (" lol", vec![expected]),
         definition(input, &domain.iter().collect(), &reserved.iter().collect()).unwrap(),
     );
 }
@@ -145,19 +151,18 @@ fn whole_parse_test() {
     let (_, domain) = domain("domain { d1, d2, d3 }").unwrap();
     let (_, reserved) = reserve("reserve { r1, r2, r3 }").unwrap();
 
-    let def = definition(
-        "r1 x r2 = r2 d d2;",
+    let (_, def) = definition(
+        "r1 x r2 => r2 d d2;",
         &domain.iter().collect(),
         &reserved.iter().collect(),
     )
-    .unwrap()
-    .1;
+    .unwrap();
 
     let expected = Runtime::new(BTreeMap::from([
         ("intrinsic".into(), Structure::intrinsic()),
         (
             "test1".into(),
-            Structure::create(domain, reserved, vec![def]).unwrap(),
+            Structure::create(domain, reserved, def).unwrap(),
         ),
     ]));
 
@@ -178,20 +183,19 @@ fn parse_dependencies() {
     let (_, domain) = domain("domain { d4, d5, d6 }").unwrap();
     let (_, reserved) = reserve("reserve { r4, r5, r6 }").unwrap();
 
-    let def = definition(
-        "r4 = d4 r5;",
+    let (_, def) = definition(
+        "r4 => d4 r5;",
         &domain.iter().collect(),
         &reserved.iter().collect(),
     )
-    .unwrap()
-    .1;
+    .unwrap();
 
     let expected = Runtime::new(BTreeMap::from([
         ("intrinsic".into(), Structure::intrinsic()),
         ("test1".into(), s1.clone()),
         (
             "test2".into(),
-            Structure::create(domain, reserved, vec![def]).unwrap(),
+            Structure::create(domain, reserved, def).unwrap(),
         ),
     ]));
 
