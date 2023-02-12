@@ -55,7 +55,7 @@ fn parse_into_runtime(
     for dependency in dependencies {
         match runtime.get(&dependency) {
             // Already parsed
-            Some(Some(_)) => continue, 
+            Some(Some(_)) => continue,
 
             // Circular dependency
             Some(None) => {
@@ -73,7 +73,17 @@ fn parse_into_runtime(
         let dependecy_program = resolver(&dependency)
             .expect("Hande failures of resolver (basically not finding files)");
 
-        parse_into_runtime(&dependecy_program, &dependency, resolver, runtime)?;
+        match parse_into_runtime(&dependecy_program, &dependency, resolver, runtime) {
+            Ok(()) => (),
+
+            // Bubble up circular dependency error
+            Err(ParseError::CircularDependency { mut cycle }) => {
+                cycle.push(dependency);
+                return Err(ParseError::CircularDependency { cycle });
+            }
+
+            Err(err) => return Err(err),
+        };
     }
 
     let full_domain = domain.iter().chain(get_domain(runtime)).collect();
