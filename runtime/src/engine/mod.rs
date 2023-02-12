@@ -115,14 +115,14 @@ impl Display for Expression {
 #[derive(Debug, PartialEq, Eq, Clone)]
 /// A definition has a "high" and a "low" side. Pink tries to lower the definitions.
 ///
-/// It is defined as `high = low`, so expressions will generally be moved to the right.
+/// It is defined as `high => low`, so expressions will generally be moved to the right.
 pub struct Definition {
     low: Vec<PatternToken>,
     high: Vec<PatternToken>,
 }
 
 impl Definition {
-    /// Definitions are defined as `other = preferred` (so `rhs` is `preferred` and `lhs` is `other`)
+    /// Definitions are defined as `high => low` (so `rhs` is `low` and `lhs` is `high`)
     pub fn new(lhs: Vec<PatternToken>, rhs: Vec<PatternToken>) -> Self {
         Self {
             high: lhs,
@@ -136,7 +136,7 @@ impl Definition {
         to: &[PatternToken],
         expression: &'a [Token],
     ) -> Option<Expression> {
-        let (mut single_bindings, mut spread_bindings) = get_match_bindings(from, expression)?;
+        let (single_bindings, spread_bindings) = get_match_bindings(from, expression)?;
 
         let mut result = Vec::new();
 
@@ -144,11 +144,11 @@ impl Definition {
             match token {
                 PatternToken::Concrete(token) => result.push(token.clone()),
                 PatternToken::Variable(name) => {
-                    let binding = single_bindings.remove(name)?;
+                    let binding = *single_bindings.get(name)?;
                     result.push(binding.clone());
                 }
                 PatternToken::SpreadVariable(name) => {
-                    let binding = spread_bindings.remove(name)?;
+                    let binding = spread_bindings.get(name)?;
                     result.extend_from_slice(binding);
                 }
             };
@@ -209,22 +209,6 @@ impl Structure {
             reserved,
             definitions,
         })
-    }
-
-    pub fn include(mut self, other: Structure) -> Result<Self, StructureError> {
-        self.domain.extend(other.domain);
-        self.reserved.extend(other.reserved);
-
-        if let Some(culprit) = self.domain.iter().find(|d| self.reserved.contains(*d)) {
-            // TODO: Return proper errors for this. Maybe make structures have names?
-            return Err(StructureError::DomainAndReservedOverlap {
-                culprit: culprit.to_owned(),
-            });
-        }
-
-        self.definitions.extend(other.definitions);
-
-        Ok(self)
     }
 
     /// The "intrinsic" structure is defined by the language itself
