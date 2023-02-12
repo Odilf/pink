@@ -1,0 +1,7 @@
+domain { }
+reserve { b, c }
+use { sets }
+
+{ (args..., result...) }(args...) => result...;
+{ (args..., result...), rest... }(args...) => result...;
+{ (other1..., other2...), rest... }(args...) => { rest... }(args...);

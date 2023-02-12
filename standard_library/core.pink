@@ -2,12 +2,16 @@
 # Defines very basic stuff such as parenthesis unwrapping and equality
 
 domain { true, false }
-reserve { = } # Commas, curly braces and parenthesis are reserved by the runtime
+reserve { =, if, then, else, panic } # Commas, curly braces and parenthesis are reserved by the runtime
 use { } 
 
 # Parenthesis unwrapping
-# (x) => x;
+(x) => x;
 
 # Equality
 x = x => true;
 x = y => false; # Note: this only works because the case where x == y is matched before
+
+# Conditionals
+if true then truthy... else falsy... => (truthy...); # Are these parentheses necessary?
+if false then truthy... else falsy... => (falsy...);

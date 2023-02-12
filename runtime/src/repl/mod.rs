@@ -45,7 +45,10 @@ pub fn run(runtime: Runtime, debug: bool) -> Result<()> {
                 };
 
                 if !debug {
-                    println!(" = {}", runtime.eval(expression));
+                    let evaluations = runtime.evaluations(expression);
+                    print!(" = {} ", evaluations.iter().next().unwrap());
+
+                    println!("(visited {} nodes)", evaluations.len());
                 } else {
                     println!("Parsed expression: {expression}");
 

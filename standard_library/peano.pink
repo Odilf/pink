@@ -3,6 +3,7 @@ reserve { Naturals, successor, + }
 use { sets }
 
 0 in Naturals => true;
+else in Naturals => false;
 successor(n) in Naturals => n in Naturals;
 
 1 <=> successor(0);
@@ -17,5 +18,5 @@ successor(n) in Naturals => n in Naturals;
 
 # Addition
 0 + 0 => 0;
-n + successor(m) => successor(n + m);
+n + successor(m) => successor (n + m);
 n + m <=> m + n;

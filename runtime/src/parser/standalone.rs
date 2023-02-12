@@ -144,7 +144,7 @@ pub fn pattern<'a>(
     }
 
     // Normal variable
-    let result: IResult<_, _> = take_while1(|c: char| c.is_alphabetic() || c == '_')(input);
+    let result: IResult<_, _> = take_while1(|c: char| c.is_alphanumeric() || c == '_')(input);
     let (rest, variable) = match result {
         Ok(result) => result,
         Err(_) => (&input[1..], &input[0..1]), // Get one character if it's not alphabetic
