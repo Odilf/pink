@@ -1,6 +1,6 @@
 use std::collections::{BTreeSet, VecDeque};
 
-use super::{Expression, Runtime, Token};
+use super::{Expression, Runtime};
 
 impl Runtime {
     fn get_lower_neighbours(&self, expression: Expression) -> BTreeSet<Expression> {
@@ -69,7 +69,7 @@ impl Runtime {
         while !queue.is_empty() {
             let expression = queue.pop_front().unwrap();
 
-            println!("Visiting: {}", expression);
+            // println!("Visiting: {}", expression);
 
             if visited.contains(&expression) {
                 continue;
