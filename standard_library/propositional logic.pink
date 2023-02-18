@@ -11,7 +11,7 @@ true and true => true;
 p and q => false;
 
 # Or
-p or q = not((not p) and (not q));
+p or q => not((not p) and (not q));
 
 # Implies
 p -> q => (not p) or q;
