@@ -1,7 +1,7 @@
-use std::{path::PathBuf, collections::BTreeMap};
+use std::{collections::BTreeMap, path::PathBuf};
 
 use clap::Parser;
-use pink_runtime::{parse_file, Structure, Runtime};
+use pink_runtime::{parse_file, Runtime, Structure};
 
 mod repl;
 
@@ -16,10 +16,13 @@ fn main() {
                 eprintln!("Error while parsing file: {}", err);
                 std::process::exit(1);
             }
-        }
-        None => Runtime::new(BTreeMap::from([("instrinsic".to_owned(), Structure::intrinsic())])),
+        },
+        None => Runtime::new(BTreeMap::from([(
+            "instrinsic".to_owned(),
+            Structure::intrinsic(),
+        )])),
     };
-        
+
     match repl::run(runtime, cli.debug) {
         Ok(()) => (),
         Err(err) => {
