@@ -1,6 +1,7 @@
 use once_cell::sync::Lazy;
 
 use rustyline::error::ReadlineError;
+use rustyline::history::FileHistory;
 use rustyline::{Editor, Result};
 
 use termion::{
@@ -25,7 +26,7 @@ pub fn run(runtime: Runtime, debug: bool) -> Result<()> {
     print!("Welcome to {}{}pink!{}", Fg(Magenta), Bold, Reset);
     println!(" (v{})", VERSION.unwrap_or("unknown"));
 
-    let mut rl = Editor::<()>::new()?;
+    let mut rl = Editor::<(), FileHistory>::new()?;
     if rl.load_history(HISTORY_FILE).is_err() {
         println!("No previous history.");
     }
@@ -34,7 +35,7 @@ pub fn run(runtime: Runtime, debug: bool) -> Result<()> {
         let readline = rl.readline(&PROMPT);
         match readline {
             Ok(line) => {
-                rl.add_history_entry(line.as_str());
+                rl.add_history_entry(line.as_str()).unwrap();
 
                 let expression = match runtime.parse_expression(line.as_str()) {
                     Ok(expression) => expression,
