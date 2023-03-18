@@ -4,6 +4,18 @@ use super::Resolver;
 
 use include_dir::{include_dir, Dir};
 
+/// A resolver for getting the standard library modules.
+/// 
+/// Standard library modules are prefixed with `std/`.
+/// 
+/// # Example
+/// 
+/// ```
+/// use pink_runtime::resolvers::{StdResolver, Resolver};
+/// 
+/// let resolver = StdResolver::default();
+/// let module = resolver.resolve("std/peano").unwrap();
+/// ```
 #[derive(Default)]
 pub struct StdResolver {}
 
