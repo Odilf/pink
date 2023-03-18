@@ -5,9 +5,14 @@ mod test;
 
 pub use standalone::expression;
 
-use std::{collections::BTreeMap, error::Error, fmt::Display, io, path::PathBuf};
+use std::{
+    collections::BTreeMap,
+    error::Error,
+    fmt::Display,
+    io,
+    path::PathBuf,
+};
 
-// use regex::Regex;
 use regex_macro::regex;
 
 use crate::engine::{Runtime, Structure, StructureError};
@@ -25,7 +30,9 @@ pub fn parse(name: &str, resolver: impl Fn(&str) -> Option<String>) -> Result<Ru
     let mut partial_runtime =
         BTreeMap::from([("intrinsic".to_string(), Some(Structure::intrinsic()))]);
 
-    let input = resolver(name).unwrap();
+    let Some(input) = resolver(name) else {
+        return Err(ParseError::FileNotFound(name.to_string()));
+    };
 
     parse_into_runtime(&input, name, &resolver, &mut partial_runtime)?;
 
@@ -121,6 +128,7 @@ pub enum ParseError {
     DomainAndReservedOverlap { culprit: String },
     CircularDependency { cycle: Vec<String> },
     UknownToken(String),
+    FileNotFound(String),
 
     // For file handling shenaningans
     Io(io::Error),
@@ -140,6 +148,7 @@ impl Display for ParseError {
             }
             ParseError::UknownToken(token) => format!("Unknown token in: \"{}\"", token),
             ParseError::Io(e) => format!("IO error: {}", e),
+            ParseError::FileNotFound(file) => format!("File not found: {}", file),
         };
 
         write!(f, "{}", message)

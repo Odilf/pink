@@ -110,8 +110,8 @@ pub fn get_domain(runtime: &PartialRuntime) -> Vec<&String> {
 }
 
 /// Parses the *whole* input string as an expression
-pub fn pattern<'a>(
-    input: &'a str,
+pub fn pattern(
+    input: &str,
     domain: &Vec<&String>,
     reserved: &Vec<&String>,
 ) -> Vec<PatternToken> {

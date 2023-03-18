@@ -2,7 +2,7 @@
 //!
 //! TODO: Maybe this should just be in the `parser` module?
 
-use std::path::PathBuf;
+use std::{path::PathBuf};
 
 use super::ParseError;
 

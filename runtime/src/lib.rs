@@ -4,6 +4,7 @@ mod engine;
 mod matching;
 mod parser;
 
+pub use engine::Expression;
 pub use engine::Runtime;
 pub use engine::Structure;
 pub use parser::parse_file;

@@ -1,3 +1,6 @@
+use std::collections::BTreeSet;
+use std::time::Instant;
+
 use once_cell::sync::Lazy;
 
 use rustyline::error::ReadlineError;
@@ -9,7 +12,7 @@ use termion::{
     style::{Bold, Reset},
 };
 
-use pink_runtime::Runtime;
+use pink_runtime::{Expression, Runtime};
 
 const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
 const HISTORY_FILE: &str = ".pink-repl-history";
@@ -33,6 +36,7 @@ pub fn run(runtime: Runtime, debug: bool) -> Result<()> {
 
     loop {
         let readline = rl.readline(&PROMPT);
+
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_str()).unwrap();
@@ -45,21 +49,7 @@ pub fn run(runtime: Runtime, debug: bool) -> Result<()> {
                     }
                 };
 
-                if !debug {
-                    let evaluations = runtime.evaluations(expression);
-                    print!(" = {} ", evaluations.iter().next().unwrap());
-
-                    println!("(visited {} nodes)", evaluations.len());
-                } else {
-                    println!("Parsed expression: {expression}");
-
-                    let results = runtime.evaluations(expression);
-
-                    println!("Results: ");
-                    for (i, result) in results.iter().enumerate() {
-                        println!("  {i}. {result}");
-                    }
-                }
+                let _evaluations = runtime.evaluations(expression, &mut repl_loop_callback());
             }
 
             Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
@@ -74,4 +64,27 @@ pub fn run(runtime: Runtime, debug: bool) -> Result<()> {
     }
 
     rl.save_history(HISTORY_FILE)
+}
+
+fn repl_loop_callback() -> impl FnMut(&BTreeSet<Expression>) {
+    let time_start = Instant::now();
+
+    let mut smallest_expression: Option<Expression> = None;
+
+    move |evaluations: &BTreeSet<Expression>| {
+        if smallest_expression.is_none() {
+            smallest_expression = Some(evaluations.iter().next().unwrap().clone());
+        }
+
+        let candidate = evaluations.iter().next().unwrap();
+
+        if candidate < &smallest_expression.clone().unwrap() {
+            smallest_expression = Some(candidate.clone());
+            println!(
+                "Found smaller expression: {} (took {:.2}s)",
+                candidate,
+                (Instant::now() - time_start).as_secs_f32()
+            );
+        }
+    }
 }

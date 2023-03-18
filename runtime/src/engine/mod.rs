@@ -131,10 +131,10 @@ impl Definition {
     }
 
     /// Transform an expression from one pattern to another.
-    fn transform<'a>(
+    fn transform(
         from: &[PatternToken],
         to: &[PatternToken],
-        expression: &'a [Token],
+        expression: &[Token],
     ) -> Option<Expression> {
         let (single_bindings, spread_bindings) = get_match_bindings(from, expression)?;
 
