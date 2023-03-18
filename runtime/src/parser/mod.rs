@@ -1,4 +1,4 @@
-mod resolvers;
+pub mod resolvers;
 mod standalone;
 #[cfg(test)]
 mod test;
@@ -11,7 +11,10 @@ use regex_macro::regex;
 
 use crate::engine::{Runtime, Structure, StructureError};
 
-use self::{standalone::{definition, domain, get_domain, get_reserved, parse_use, reserve}, resolvers::Resolver};
+use self::{
+    resolvers::Resolver,
+    standalone::{definition, domain, get_domain, get_reserved, parse_use, reserve},
+};
 
 /// TODO: Maybe make a type for inputs with comments and without. To further ensure safety.
 /// Then we can add a trait and make it super generic! But that might be unecessary.
@@ -30,7 +33,7 @@ pub fn parse<R: Resolver>(name: &str, resolver: &R) -> Result<Runtime, ParseErro
 
     let runtime = partial_runtime
         .into_iter()
-        // This shouldn't *really* be done this way. The `Option`s are unnecessary. 
+        // This shouldn't *really* be done this way. The `Option`s are unnecessary.
         .filter_map(|(name, structure)| structure.map(|structure| (name, structure)))
         .collect();
 
@@ -70,7 +73,8 @@ fn parse_into_runtime<R: Resolver>(
 
         runtime.insert(dependency.clone(), None);
 
-        let dependecy_program = resolver.resolve(&dependency)
+        let dependecy_program = resolver
+            .resolve(&dependency)
             .expect("Hande failures of resolver (basically not finding files)");
 
         match parse_into_runtime(&dependecy_program, &dependency, resolver, runtime) {
@@ -110,8 +114,8 @@ fn parse_into_runtime<R: Resolver>(
 }
 
 /// Parse using a file resolver.
-/// 
-/// Basically, this is a convenience function for `parse` that uses a `FileResolver` to resolve names. 
+///
+/// Basically, this is a convenience function for `parse` that uses a `FileResolver` to resolve names.
 /// So you can just pass a path to a file and it will parse it, but also do `std/whatever`.
 pub fn parse_file(path: PathBuf) -> Result<Runtime, ParseError> {
     let (resolver, name) = resolvers::FileResolver::from_full_path(path).unwrap();

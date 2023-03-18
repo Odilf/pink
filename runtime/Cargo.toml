@@ -19,3 +19,5 @@ regex = { version = "1.7.1", features = ["pattern"] }
 regex-macro = "0.2.0"
 rustyline = "11.0.0"
 termion = "2.0.1"
+include_dir = "0.7.3"
+
