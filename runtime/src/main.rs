@@ -17,6 +17,7 @@ fn main() {
                 std::process::exit(1);
             }
         },
+
         None => Runtime::new(BTreeMap::from([(
             "instrinsic".to_owned(),
             Structure::intrinsic(),

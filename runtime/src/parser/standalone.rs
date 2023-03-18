@@ -110,11 +110,7 @@ pub fn get_domain(runtime: &PartialRuntime) -> Vec<&String> {
 }
 
 /// Parses the *whole* input string as an expression
-pub fn pattern(
-    input: &str,
-    domain: &Vec<&String>,
-    reserved: &Vec<&String>,
-) -> Vec<PatternToken> {
+pub fn pattern(input: &str, domain: &Vec<&String>, reserved: &Vec<&String>) -> Vec<PatternToken> {
     if input.is_empty() {
         return Vec::new();
     }

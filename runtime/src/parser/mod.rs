@@ -5,19 +5,13 @@ mod test;
 
 pub use standalone::expression;
 
-use std::{
-    collections::BTreeMap,
-    error::Error,
-    fmt::Display,
-    io,
-    path::PathBuf,
-};
+use std::{collections::BTreeMap, error::Error, fmt::Display, io, path::PathBuf};
 
 use regex_macro::regex;
 
 use crate::engine::{Runtime, Structure, StructureError};
 
-use self::standalone::{definition, domain, get_domain, get_reserved, parse_use, reserve};
+use self::{standalone::{definition, domain, get_domain, get_reserved, parse_use, reserve}, resolvers::Resolver};
 
 /// TODO: Maybe make a type for inputs with comments and without. To further ensure safety.
 /// Then we can add a trait and make it super generic! But that might be unecessary.
@@ -26,18 +20,17 @@ fn strip_comments(input: String) -> String {
     input.replace(regex!("#.*"), "")
 }
 
-pub fn parse(name: &str, resolver: impl Fn(&str) -> Option<String>) -> Result<Runtime, ParseError> {
+pub fn parse<R: Resolver>(name: &str, resolver: &R) -> Result<Runtime, ParseError> {
     let mut partial_runtime =
         BTreeMap::from([("intrinsic".to_string(), Some(Structure::intrinsic()))]);
 
-    let Some(input) = resolver(name) else {
-        return Err(ParseError::FileNotFound(name.to_string()));
-    };
+    let input = resolver.resolve(name).unwrap();
 
-    parse_into_runtime(&input, name, &resolver, &mut partial_runtime)?;
+    parse_into_runtime(&input, name, resolver, &mut partial_runtime)?;
 
     let runtime = partial_runtime
         .into_iter()
+        // This shouldn't *really* be done this way. The `Option`s are unnecessary. 
         .filter_map(|(name, structure)| structure.map(|structure| (name, structure)))
         .collect();
 
@@ -47,10 +40,10 @@ pub fn parse(name: &str, resolver: impl Fn(&str) -> Option<String>) -> Result<Ru
 // The `Option` is `None` if the file has not been parsed yet. This is used to prevent circular dependencies.
 type PartialRuntime = BTreeMap<String, Option<Structure>>;
 
-fn parse_into_runtime(
+fn parse_into_runtime<R: Resolver>(
     input: &str,
     name: &str,
-    resolver: &impl Fn(&str) -> Option<String>,
+    resolver: &R,
     runtime: &mut PartialRuntime,
 ) -> Result<(), ParseError> {
     let input = strip_comments(input.to_string());
@@ -77,7 +70,7 @@ fn parse_into_runtime(
 
         runtime.insert(dependency.clone(), None);
 
-        let dependecy_program = resolver(&dependency)
+        let dependecy_program = resolver.resolve(&dependency)
             .expect("Hande failures of resolver (basically not finding files)");
 
         match parse_into_runtime(&dependecy_program, &dependency, resolver, runtime) {
@@ -98,6 +91,7 @@ fn parse_into_runtime(
 
     let mut definitions = Vec::new();
     let mut input = input;
+
     while let Ok((rest, mut parsed_definitions)) = definition(input, &full_domain, &full_reserved) {
         input = rest;
         definitions.append(&mut parsed_definitions);
@@ -115,11 +109,14 @@ fn parse_into_runtime(
     Ok(())
 }
 
+/// Parse using a file resolver.
+/// 
+/// Basically, this is a convenience function for `parse` that uses a `FileResolver` to resolve names. 
+/// So you can just pass a path to a file and it will parse it, but also do `std/whatever`.
 pub fn parse_file(path: PathBuf) -> Result<Runtime, ParseError> {
-    let (root, name) = resolvers::get_root_and_name(path).unwrap();
-    let resolver = resolvers::file_resolver(root);
+    let (resolver, name) = resolvers::FileResolver::from_full_path(path).unwrap();
 
-    parse(name.as_str(), resolver)
+    parse(&name, &resolver)
 }
 
 #[derive(Debug)]

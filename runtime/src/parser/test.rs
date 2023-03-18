@@ -1,6 +1,5 @@
 use crate::engine::Definition;
 use crate::engine::PatternToken;
-use crate::parser::resolvers::get_root_and_name;
 use crate::parser::standalone::pattern;
 use std::collections::BTreeSet;
 
@@ -230,13 +229,13 @@ fn parse_parent() {
     assert_eq!(expected, result);
 }
 
-#[test]
-fn get_name_and_root_test() {
-    let (root, name) = get_root_and_name("src/parser/test_files/test1.pink".into()).unwrap();
+// #[test]
+// fn get_name_and_root_test() {
+//     let (root, name) = get_root_and_name("src/parser/test_files/test1.pink".into()).unwrap();
 
-    assert_eq!("test1", name);
-    assert_eq!(PathBuf::from("src/parser/test_files"), root);
-}
+//     assert_eq!("test1", name);
+//     assert_eq!(PathBuf::from("src/parser/test_files"), root);
+// }
 
 #[test]
 fn parse_cycle() {

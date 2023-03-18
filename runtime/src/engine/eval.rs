@@ -3,10 +3,7 @@ use std::collections::BTreeSet;
 use super::{Expression, Runtime};
 
 impl Runtime {
-    fn get_lower_neighbours(
-        &self,
-        expression: &Expression,
-    ) -> Vec<Expression> {
+    fn get_lower_neighbours(&self, expression: &Expression) -> Vec<Expression> {
         let mut neighbours = Vec::new();
 
         for size in 1..=expression.tokens.len() {
@@ -58,7 +55,7 @@ impl Runtime {
             }
 
             visited.insert(expression.clone());
-            
+
             let neighbours = self.get_lower_neighbours(&expression);
 
             queue.extend(neighbours);
