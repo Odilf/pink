@@ -36,13 +36,12 @@ impl Runtime {
         callback: &mut impl FnMut(&BTreeSet<Expression>),
     ) -> Expression {
         self.evaluations(expression, callback)
-            .iter()
+            .into_iter()
             .next()
             .expect("Should have at least the original expression")
-            .clone()
     }
 
-    /// Returns all possible evaluations
+    /// Returns all possible evaluations and runs the callback on each iteration
     pub fn evaluations(
         &self,
         expression: Expression,
