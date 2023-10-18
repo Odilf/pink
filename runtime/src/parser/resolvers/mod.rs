@@ -12,5 +12,5 @@ pub trait Resolver {
     type Error: std::error::Error;
 
     /// Resolves a name to a value.
-    fn resolve(&self, name: &str) -> Result<String, Self::Error>;
+    fn resolve(&mut self, name: &str) -> Result<String, Self::Error>;
 }

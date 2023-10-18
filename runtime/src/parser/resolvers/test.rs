@@ -12,7 +12,9 @@ mod std_resovler_test {
 
     #[test]
     fn incorrect_prefix() {
-        std_resolver::StdResolver::default().resolve("foo").unwrap_err();
+        std_resolver::StdResolver::default()
+            .resolve("foo")
+            .unwrap_err();
     }
 
     #[test]

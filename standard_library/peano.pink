@@ -1,11 +1,13 @@
 domain { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }
 reserve { Naturals, successor, + }
-use { sets }
+use { std/sets }
 
 0 in Naturals => true;
-else in Naturals => false;
 successor(n) in Naturals => n in Naturals;
+else in Naturals => false;
 
+
+# Numbers
 1 <=> successor(0);
 2 <=> successor(1);
 3 <=> successor(2);
@@ -16,7 +18,11 @@ successor(n) in Naturals => n in Naturals;
 8 <=> successor(7);
 9 <=> successor(8);
 
+# 9 + 10 <=> 21;
+
 # Addition
 0 + 0 => 0;
 n + successor(m) => successor (n + m);
+
+# Commitativity
 n + m <=> m + n;

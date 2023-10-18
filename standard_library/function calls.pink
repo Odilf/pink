@@ -1,6 +1,6 @@
 domain { }
 reserve { b, c }
-use { sets }
+use { std/sets }
 
 { (args..., result...) }(args...) => result...;
 { (args..., result...), rest... }(args...) => result...;

@@ -4,6 +4,7 @@ use crate::parser::standalone::pattern;
 use std::collections::BTreeSet;
 
 use crate::engine::Token;
+use pretty_assertions::assert_eq;
 
 use super::*;
 

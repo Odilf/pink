@@ -5,14 +5,14 @@ use super::Resolver;
 use include_dir::{include_dir, Dir};
 
 /// A resolver for getting the standard library modules.
-/// 
+///
 /// Standard library modules are prefixed with `std/`.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```
 /// use pink_runtime::resolvers::{StdResolver, Resolver};
-/// 
+///
 /// let resolver = StdResolver::default();
 /// let module = resolver.resolve("std/peano").unwrap();
 /// ```
@@ -22,7 +22,7 @@ pub struct StdResolver {}
 impl Resolver for StdResolver {
     type Error = StdResolverError;
 
-    fn resolve(&self, name: &str) -> Result<String, Self::Error> {
+    fn resolve(&mut self, name: &str) -> Result<String, Self::Error> {
         let path = PathBuf::from(name);
         let mut path_iter = path.iter();
 
@@ -37,10 +37,18 @@ impl Resolver for StdResolver {
         let rest = rest.with_extension("pink");
 
         let Some(file) = STANDARD_LIBRARY.get_file(&rest) else {
-			return Err(StdResolverError::NotAnStdModule(rest.to_str().unwrap().to_string()));
-		};
+            return Err(StdResolverError::NotAnStdModule(
+                rest.to_str().unwrap().to_string(),
+            ));
+        };
 
         Ok(file.contents_utf8().unwrap().to_string())
+    }
+}
+
+impl StdResolver {
+    pub fn resolve(name: &str) -> Result<String, StdResolverError> {
+        Self::default().resolve(name)
     }
 }
 

@@ -1,6 +1,6 @@
 domain { }
 reserve { not, and, or, ->, nand, nor, xor }
-use { sets }
+use { std/sets }
 
 # Not
 not false => true;

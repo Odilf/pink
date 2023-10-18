@@ -1,7 +1,7 @@
 # Sets and set operations
 domain { }
 reserve { in }
-use { core }
+use { std/core }
 
 # In operator
 x in { } => false;

@@ -20,10 +20,11 @@ use self::{
 /// Then we can add a trait and make it super generic! But that might be unecessary.
 /// It would be better to just rewrite the parser without nom in a nicer way tailored to the project.
 fn strip_comments(input: String) -> String {
-    input.replace(regex!("#.*"), "")
+    let regex = regex!("#.*");
+    regex.replace_all(&input, "").to_string()
 }
 
-pub fn parse<R: Resolver>(name: &str, resolver: &R) -> Result<Runtime, ParseError> {
+pub fn parse<R: Resolver>(name: &str, resolver: &mut R) -> Result<Runtime, ParseError> {
     let mut partial_runtime =
         BTreeMap::from([("intrinsic".to_string(), Some(Structure::intrinsic()))]);
 
@@ -46,7 +47,7 @@ type PartialRuntime = BTreeMap<String, Option<Structure>>;
 fn parse_into_runtime<R: Resolver>(
     input: &str,
     name: &str,
-    resolver: &R,
+    resolver: &mut R,
     runtime: &mut PartialRuntime,
 ) -> Result<(), ParseError> {
     let input = strip_comments(input.to_string());
@@ -118,9 +119,10 @@ fn parse_into_runtime<R: Resolver>(
 /// Basically, this is a convenience function for `parse` that uses a `FileResolver` to resolve names.
 /// So you can just pass a path to a file and it will parse it, but also do `std/whatever`.
 pub fn parse_file(path: PathBuf) -> Result<Runtime, ParseError> {
-    let (resolver, name) = resolvers::FileResolver::from_full_path(path).unwrap();
+    // let (resolver, name) = resolvers::FileResolver::from_full_path(path).unwrap();
+    let mut resolver = resolvers::FileResolver::new();
 
-    parse(&name, &resolver)
+    parse(path.to_str().unwrap(), &mut resolver)
 }
 
 #[derive(Debug)]

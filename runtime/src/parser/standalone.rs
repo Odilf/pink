@@ -207,14 +207,14 @@ pub fn definition<'a>(
         return Err(ParseError::Expected {
             expected: "=> or <=>".to_string(),
             found: rest.to_string(),
-        })
+        });
     };
 
     let Some(rhs) = sides.next() else {
         return Err(ParseError::Expected {
             expected: "something after => or <=>".to_string(),
             found: rest.to_string(),
-        })
+        });
     };
 
     // TODO: Just... allow this lol
