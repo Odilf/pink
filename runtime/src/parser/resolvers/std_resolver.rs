@@ -13,7 +13,7 @@ use include_dir::{include_dir, Dir};
 /// ```
 /// use pink_runtime::resolvers::{StdResolver, Resolver};
 ///
-/// let resolver = StdResolver::default();
+/// let mut resolver = StdResolver::default();
 /// let module = resolver.resolve("std/peano").unwrap();
 /// ```
 #[derive(Default)]

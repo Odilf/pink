@@ -161,7 +161,7 @@ fn whole_parse_test() {
     let expected = Runtime::new(BTreeMap::from([
         ("intrinsic".into(), Structure::intrinsic()),
         (
-            "test1".into(),
+            "src/parser/test_files/test1.pink".into(),
             Structure::create(domain, reserved, def).unwrap(),
         ),
     ]));
@@ -178,7 +178,7 @@ fn parse_dependencies() {
     let test1_structures = parse_file("src/parser/test_files/test1.pink".into())
         .unwrap()
         .structures;
-    let s1 = test1_structures.get("test1").unwrap();
+    let s1 = test1_structures.get("src/parser/test_files/test1.pink").unwrap();
 
     let (_, domain) = domain("domain { d4, d5, d6 }").unwrap();
     let (_, reserved) = reserve("reserve { r4, r5, r6 }").unwrap();
@@ -190,12 +190,14 @@ fn parse_dependencies() {
     )
     .unwrap();
 
+    let s2 = Structure::create(domain, reserved, def).unwrap();
+
     let expected = Runtime::new(BTreeMap::from([
         ("intrinsic".into(), Structure::intrinsic()),
-        ("test1".into(), s1.clone()),
+        ("src/parser/test_files/test2.pink".into(), s2.clone()),
         (
-            "test2".into(),
-            Structure::create(domain, reserved, def).unwrap(),
+            "test1".into(),
+            s1.clone(),
         ),
     ]));
 
@@ -211,7 +213,7 @@ fn parse_parent() {
     let test1_structures = parse_file("src/parser/test_files/test1.pink".into())
         .unwrap()
         .structures;
-    let s1 = test1_structures.get("test1").unwrap();
+    let s1 = test1_structures.get("src/parser/test_files/test1.pink").unwrap();
 
     let domain = BTreeSet::new();
     let reserved = BTreeSet::new();
@@ -220,7 +222,7 @@ fn parse_parent() {
         ("intrinsic".into(), Structure::intrinsic()),
         ("../test1".into(), s1.clone()),
         (
-            "nested".into(),
+            "src/parser/test_files/test3/nested.pink".into(),
             Structure::create(domain, reserved, Vec::new()).unwrap(),
         ),
     ]));
