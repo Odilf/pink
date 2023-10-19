@@ -25,13 +25,6 @@ pub struct FileResolver {
 }
 
 impl FileResolver {
-    // TODO: This shouldn't exist.
-    // pub fn from_full_path(path: PathBuf) -> Option<(Self, String)> {
-    //     let (root, name) = get_root_and_name(path)?;
-
-    //     Some((Self { root }, name))
-    // }
-
     pub fn new() -> Self {
         Self {
             cwd: PathBuf::from(""),
