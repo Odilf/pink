@@ -3,6 +3,9 @@ pub mod eval;
 #[cfg(test)]
 mod test;
 
+#[cfg(feature = "wasm")]
+pub mod wasm;
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     error::Error,
@@ -24,6 +27,7 @@ pub enum Token {
     Literal(String),
 }
 
+#[cfg(not(feature = "wasm"))]
 impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use termion::{
@@ -53,6 +57,7 @@ pub enum PatternToken {
     SpreadVariable(String),
 }
 
+#[cfg(not(feature = "wasm"))]
 impl Display for PatternToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use termion::style::{Bold, Italic, Reset};
@@ -102,6 +107,7 @@ impl From<&[Token]> for Expression {
     }
 }
 
+#[cfg(not(feature = "wasm"))]
 impl Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for token in &self.tokens {
@@ -166,6 +172,7 @@ impl Definition {
     }
 }
 
+#[cfg(not(feature = "wasm"))]
 impl Display for Definition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for token in &self.high {
@@ -242,6 +249,7 @@ impl Structure {
     }
 }
 
+#[cfg(not(feature = "wasm"))]
 impl Display for Structure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let domain: Vec<_> = self.domain.iter().cloned().collect();
@@ -338,6 +346,7 @@ impl Runtime {
     }
 }
 
+#[cfg(not(feature = "wasm"))]
 impl Display for Runtime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (name, structure) in &self.structures {

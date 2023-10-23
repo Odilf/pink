@@ -19,6 +19,7 @@ macro_rules! get_program {
 /// A resolver that embeds all the standard library files the binary itself
 /// 
 /// Warning: It might considerably increas binary size
+#[derive(Debug, Default)]
 pub struct EmbeddedStdResolver {}
 
 const PROGRAMS: [EmbeddedProgram; 6] = [

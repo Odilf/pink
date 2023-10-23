@@ -13,7 +13,7 @@ use regex_macro::regex;
 use crate::engine::{Runtime, Structure, StructureError};
 
 use self::{
-    resolvers::Resolver,
+    resolvers::{Resolver, FileResolver, StdResolver},
     standalone::{definition, domain, get_domain, get_reserved, parse_use, reserve},
 };
 
@@ -24,6 +24,7 @@ fn strip_comments(input: String) -> String {
     let regex = regex!("#.*");
     regex.replace_all(&input, "").to_string()
 }
+
 
 pub fn parse<R: Resolver>(name: &str, resolver: &mut R) -> Result<Runtime, ParseError> {
     let mut partial_runtime =
@@ -120,8 +121,7 @@ fn parse_into_runtime<R: Resolver>(
 /// Basically, this is a convenience function for `parse` that uses a `FileResolver` to resolve names.
 /// So you can just pass a path to a file and it will parse it, but also do `std/whatever`.
 pub fn parse_file(path: PathBuf) -> Result<Runtime, ParseError> {
-    // let (resolver, name) = resolvers::FileResolver::from_full_path(path).unwrap();
-    let mut resolver = resolvers::FileResolver::new();
+    let mut resolver = StdResolver::default().chain(FileResolver::new());
 
     parse(path.to_str().unwrap(), &mut resolver)
 }

@@ -37,10 +37,6 @@ impl Resolver for FileResolver {
 
     fn resolve(&mut self, name: &str) -> Result<String, Self::Error> {
         // Try to resolve the module using the standard library resolver
-        if let Ok(module) = StdResolver::resolve(name) {
-            return Ok(module);
-        }
-
         let mut path = self.cwd.clone();
 
         path.push(name);

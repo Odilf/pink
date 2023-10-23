@@ -1,10 +1,21 @@
+#[cfg(feature = "repl")]
 use std::{collections::BTreeMap, path::PathBuf};
 
+#[cfg(feature = "repl")]
 use clap::Parser;
+#[cfg(feature = "repl")]
 use pink_runtime::{parse_file, Runtime, Structure};
 
+#[cfg(feature = "repl")]
 mod repl;
 
+#[cfg(not(feature = "repl"))]
+fn main() {
+    eprintln!("This binary was compiled without the REPL feature");
+    std::process::exit(1);
+}
+
+#[cfg(feature = "repl")]
 fn main() {
     let cli = Cli::parse();
 
@@ -33,6 +44,7 @@ fn main() {
     };
 }
 
+#[cfg(feature = "repl")]
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
