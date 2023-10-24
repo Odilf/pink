@@ -47,14 +47,8 @@
 </main>
 
 <style lang="postcss">
-	:global(.cm-scroll) {
-		/* background-color: var(--muted) !important; */
-		/* color: var(--primary-foreground) !important; */
-	}
-
 	:global(.cm-editor) {
 		overflow: hidden;
 		@apply rounded;
-		/* border-radius: 12px !important; */
 	}
 </style>
