@@ -3,8 +3,8 @@
 	"version": "0.0.1",
 	"private": true,
 	"scripts": {
-		"wasm-once": "wasm-pack build --dev ../runtime --out-dir ../site/.wasm-runtime --no-default-features --features wasm",
-		"wasm-release": "wasm-pack build ../runtime --out-dir ../site/.wasm-runtime --no-default-features --features wasm",
+		"wasm-once": "wasm-pack build --dev  ../runtime --target no-modules --out-dir ../site/static/.wasm-runtime --no-default-features --features wasm",
+		"wasm-release": "wasm-pack build  ../runtime --target no-modules --out-dir ../site/static/.wasm-runtime --no-default-features --features wasm",
 		"wasm": "find ../runtime/ -name '*.rs' | entr pnpm wasm-once",
 		"dev": "vite dev",
 		"build": "vite build",

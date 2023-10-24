@@ -1,4 +1,5 @@
-// import workerURL from './worker?url';
+// import workerURL from './worker?worker&url';
+// import CacaWorker from './worker?worker';
 
 import { browser } from "$app/environment"
 import { writable, type Writable } from "svelte/store"
@@ -23,7 +24,9 @@ export function getWorker(): Promise<{
 		let status = writable<Status>("idle")
 
 		const url = new URL("worker", import.meta.url)
-		const worker = new Worker(url, { type: "module" })
+		// const worker = new CacaWorker()
+		// const worker = new Worker("../worker.js", { type: "module" })
+		const worker = new Worker("../worker.js")
 		worker.onmessage = (event) => {
 			if (event.data.type === "ready") {
 				resolve(methods)
