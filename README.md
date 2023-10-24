@@ -1,8 +1,6 @@
 # pink
 
-A very minimal replecement based DSL, intended for math. 
-
-WARNING: This is still in extremely early stages. Don't expected anything. 
+A very minimal replacement based DSL, intended for math experimentation. 
 
 ## Get started
 
