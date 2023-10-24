@@ -1,12 +1,12 @@
 // ";
 
-importScripts('/.wasm-runtime/pink_runtime.js');
+importScripts('/wasm-runtime/pink_runtime.js');
 
 const { AsyncRuntime } = wasm_bindgen;
 
 async function init_wasm() {
 
-	await wasm_bindgen('/.wasm-runtime/pink_runtime_bg.wasm');
+	await wasm_bindgen('/wasm-runtime/pink_runtime_bg.wasm');
 
 	const runtime = AsyncRuntime.new();
 
