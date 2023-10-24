@@ -4,6 +4,8 @@ A very minimal replacement based DSL, intended for math experimentation.
 
 ## Get started
 
+The easiest way to use pink is in [the online playground](https://pink.odilf.com/playground)
+
 To install pink as a binary, if you have cargo just do 
 
 ```bash
