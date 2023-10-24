@@ -4,23 +4,23 @@
 
 domain { true, false }
 reserve { not, ~, and, ^, or, V, ->, xor, nand, nor }
-use { }
+use { std/core }
 
 # Aliases
-not = ~;
-and = ^;
-or = V;
+not <=> ~;
+and <=> ^;
+or <=> V;
 
 # Not
-~true = false;
-~false = true;
+~true => false;
+~false => true;
 
 # And
-true ^ true = true;
-p ^ q = false;
+true ^ true => true;
+p ^ q => false;
 
 # Rest of them
-p V q = ~((~p) ^ (~q));
-p -> q = (~p) V q;
-p nand q = ~(p ^ q);
-p nor q = ~(p V q);
+p V q => ~((~p) ^ (~q));
+p -> q => (~p) V q;
+p nand q => ~(p ^ q);
+p nor q => ~(p V q);
