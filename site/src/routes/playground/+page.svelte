@@ -8,7 +8,7 @@
 	import exampleProgram from '$lib/../../../examples/propositional logic.pink?raw';
 	import { barf } from 'thememirror';
 
-	let selectedProgram = 0;
+	let selectedProgram = 2;
 
 	const std = import.meta.glob('$lib/../../../standard_library/*.pink', { eager: true, as: 'raw' });
 	const names = [...Object.keys(std).map((path) => unwrap(path.split('/').at(-1))), 'custom'];
@@ -25,16 +25,18 @@
 	<Tabs.Root value="account" class="">
 		<Tabs.List class="grid grid-rows-2 grid-cols-4">
 			{#each names as name, i}
-				<Tabs.Trigger class="flex-1" value={name} on:click={() => (selectedProgram = i)}
-					>{name}</Tabs.Trigger
-				>
+				<Tabs.Trigger class="flex-1" id={name} value={name} on:click={() => (selectedProgram = i)}>
+					{name}
+				</Tabs.Trigger>
 			{/each}
 		</Tabs.List>
 
 		{#each programs as program, i}
-		{@const editable = i === programs.length - 1}
+			{@const editable = i === programs.length - 1}
 			<Tabs.Content value={names[i]}>
-				<div class="editor transition opacity-50 hover:opacity-100 focus-within:opacity-100 selection:opacity-100">
+				<div
+					class="editor transition opacity-50 hover:opacity-100 focus-within:opacity-100 selection:opacity-100"
+				>
 					<CodeMirror
 						bind:value={program}
 						{editable}
