@@ -1,6 +1,5 @@
 .DS_Store
 node_modules
-.wasm-runtime
 /build
 /.svelte-kit
 /package

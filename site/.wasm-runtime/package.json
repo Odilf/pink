@@ -1,0 +1,25 @@
+{
+  "name": "pink-runtime",
+  "collaborators": [
+    "Odilf"
+  ],
+  "description": "A very minimal (and inefficient) replecement based language, intended for math.",
+  "version": "0.1.1",
+  "license": "GPL-3.0+",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Odilf/pink"
+  },
+  "files": [
+    "pink_runtime_bg.wasm",
+    "pink_runtime.js",
+    "pink_runtime_bg.js",
+    "pink_runtime.d.ts"
+  ],
+  "module": "pink_runtime.js",
+  "types": "pink_runtime.d.ts",
+  "sideEffects": [
+    "./pink_runtime.js",
+    "./snippets/*"
+  ]
+}

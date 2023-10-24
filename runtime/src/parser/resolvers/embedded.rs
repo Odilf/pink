@@ -27,8 +27,7 @@ macro_rules! get_program {
 #[derive(Debug, Default)]
 pub struct EmbeddedStdResolver {}
 
-const PROGRAMS: [EmbeddedProgram; 6] = [
-    get_program!("binary"),
+const PROGRAMS: [EmbeddedProgram; 5] = [
     get_program!("core"),
     get_program!("function calls"),
     get_program!("peano"),
