@@ -1,5 +1,5 @@
 domain { }
-reserve { b, c }
+reserve { }
 use { std/sets }
 
 { (args..., result...) }(args...) => result...;
