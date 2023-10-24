@@ -5,21 +5,30 @@
 	import rehypeStringify from 'rehype-stringify';
 
 	export let expression: string;
+	export let timeElapsed: number | undefined;
 </script>
 
-<span>
+<div class="relative">
+	{#if expression}
+		{#await unified()
+			.use(remarkParse)
+			.use(remarkRehype)
+			.use(rehypeStringify)
+			.process(expression) then html}
+			{@html html}
+		{/await}
 
-	{#await unified()
-	.use(remarkParse)
-	.use(remarkRehype)
-	.use(rehypeStringify)
-	.process(expression) then html}
-	{@html html}
-	{/await}
-</span>
-	
+		{#if timeElapsed}
+			<span class="text-sm text-muted-foreground absolute top-0 right-0">(took {timeElapsed?.toFixed(2)}s) &nbsp;</span>
+		{/if}
+	{:else}
+		<p>&nbsp</p>
+	{/if}
+
+</div>
+
 <style lang="postcss">
-	span > :global(p > em) {
+	div > :global(p > em) {
 		@apply text-primary not-italic;
 	}
 </style>

@@ -60,9 +60,6 @@
 	</span>
 </div>
 
-<div class="text-2xl font-bold pt-2 pb-8">
-	<Expression expression={result?.expression ?? ""} />&nbsp
-	{#if result?.timeElapsed}
-		<span class="text-sm text-muted">({result.timeElapsed.toFixed(2)}s)</span>
-	{/if}
+<div class="text-2xl font-bold pt-2 pb-4">
+	<Expression expression={result?.expression ?? ""} timeElapsed={result?.timeElapsed} />
 </div>
