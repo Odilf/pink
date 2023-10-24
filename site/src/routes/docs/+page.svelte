@@ -7,7 +7,7 @@
 <div class="w-screen max-w-xl mx-auto py-8">
 	{@html data.html}
 
-	<Button href="https://github.com/Odilf/pink"> GitHub </Button>
+	<Button class="text-xl text-muted-foreground" href="https://github.com/Odilf/pink" variant="outline"> GitHub </Button>
 </div>
 
 <style lang="postcss">
