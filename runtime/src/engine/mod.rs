@@ -35,13 +35,21 @@ impl Display for Token {
             style::Reset,
         };
         match self {
-            Token::Element(element) => write!(f, "{}{element}{}", Fg(LightMagenta), Reset)?,
+            Token::Element(element) => write!(f, "{}{element}{}", Fg(LightMagenta), Reset),
 
             // TODO: I'm afraid something could be wrong here in different terminals
-            Token::Literal(literal) => write!(f, "{literal}")?,
+            Token::Literal(literal) => write!(f, "{literal}"),
         }
+    }
+}
 
-        Ok(())
+#[cfg(feature = "wasm")]
+impl Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Token::Element(element) => write!(f, "*{}*", element),
+            Token::Literal(literal) => write!(f, "{}", literal),
+        }
     }
 }
 
@@ -66,6 +74,17 @@ impl Display for PatternToken {
             Self::Concrete(token) => write!(f, "{token}"),
             Self::Variable(name) => write!(f, "{}{name}{}", Bold, Reset),
             Self::SpreadVariable(name) => write!(f, "{}{}{name}{}", Bold, Italic, Reset),
+        }
+    }
+}
+
+#[cfg(feature = "wasm")]
+impl Display for PatternToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Concrete(token) => write!(f, "{token}"),
+            Self::Variable(name) => write!(f, "*{name}*"),
+            Self::SpreadVariable(name) => write!(f, "*_{name}_*"),
         }
     }
 }
@@ -107,7 +126,6 @@ impl From<&[Token]> for Expression {
     }
 }
 
-#[cfg(not(feature = "wasm"))]
 impl Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for token in &self.tokens {
@@ -172,7 +190,6 @@ impl Definition {
     }
 }
 
-#[cfg(not(feature = "wasm"))]
 impl Display for Definition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for token in &self.high {
@@ -249,7 +266,6 @@ impl Structure {
     }
 }
 
-#[cfg(not(feature = "wasm"))]
 impl Display for Structure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let domain: Vec<_> = self.domain.iter().cloned().collect();
@@ -346,7 +362,6 @@ impl Runtime {
     }
 }
 
-#[cfg(not(feature = "wasm"))]
 impl Display for Runtime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (name, structure) in &self.structures {

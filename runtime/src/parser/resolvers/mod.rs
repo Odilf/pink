@@ -4,16 +4,16 @@ mod std_resolver;
 #[cfg(feature = "embedded_std")]
 mod embedded;
 
-#[cfg(test)]
-mod test;
+mod chain;
 mod function;
 mod map;
-mod chain;
+#[cfg(test)]
+mod test;
 
-pub use file_resolver::FileResolver;
-pub use std_resolver::StdResolver;
 pub use chain::Chain;
+pub use file_resolver::FileResolver;
 pub use map::MapResolver;
+pub use std_resolver::StdResolver;
 
 #[cfg(feature = "embedded_std")]
 pub use embedded::EmbeddedStdResolver;

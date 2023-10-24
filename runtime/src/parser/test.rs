@@ -178,7 +178,9 @@ fn parse_dependencies() {
     let test1_structures = parse_file("src/parser/test_files/test1.pink".into())
         .unwrap()
         .structures;
-    let s1 = test1_structures.get("src/parser/test_files/test1.pink").unwrap();
+    let s1 = test1_structures
+        .get("src/parser/test_files/test1.pink")
+        .unwrap();
 
     let (_, domain) = domain("domain { d4, d5, d6 }").unwrap();
     let (_, reserved) = reserve("reserve { r4, r5, r6 }").unwrap();
@@ -195,10 +197,7 @@ fn parse_dependencies() {
     let expected = Runtime::new(BTreeMap::from([
         ("intrinsic".into(), Structure::intrinsic()),
         ("src/parser/test_files/test2.pink".into(), s2.clone()),
-        (
-            "test1".into(),
-            s1.clone(),
-        ),
+        ("test1".into(), s1.clone()),
     ]));
 
     let result = parse_file(input_path.into()).unwrap();
@@ -213,7 +212,9 @@ fn parse_parent() {
     let test1_structures = parse_file("src/parser/test_files/test1.pink".into())
         .unwrap()
         .structures;
-    let s1 = test1_structures.get("src/parser/test_files/test1.pink").unwrap();
+    let s1 = test1_structures
+        .get("src/parser/test_files/test1.pink")
+        .unwrap();
 
     let domain = BTreeSet::new();
     let reserved = BTreeSet::new();

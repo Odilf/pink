@@ -1,6 +1,6 @@
 use std::{fmt::Display, path::PathBuf};
 
-use super::{Resolver, StdResolver};
+use super::Resolver;
 
 /// Splits a path into name and root.
 ///

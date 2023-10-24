@@ -13,7 +13,7 @@ use regex_macro::regex;
 use crate::engine::{Runtime, Structure, StructureError};
 
 use self::{
-    resolvers::{Resolver, FileResolver, StdResolver},
+    resolvers::{FileResolver, Resolver, StdResolver},
     standalone::{definition, domain, get_domain, get_reserved, parse_use, reserve},
 };
 
@@ -24,7 +24,6 @@ fn strip_comments(input: String) -> String {
     let regex = regex!("#.*");
     regex.replace_all(&input, "").to_string()
 }
-
 
 pub fn parse<R: Resolver>(name: &str, resolver: &mut R) -> Result<Runtime, ParseError> {
     let mut partial_runtime =
